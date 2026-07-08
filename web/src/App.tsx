@@ -441,7 +441,7 @@ function PortfolioTable({ pf, now, onPick }: {
 
 function DetailPanel({ detail, now, movers }: { detail: CardDetail | null; now: number; movers: Mover[] }) {
   if (!detail) return <div className="empty">select a mover or search result — ⏎ opens it here</div>;
-  const { quote, stats, graded, raw, links, history } = detail;
+  const { quote, stats, graded, raw, images, links, history } = detail;
   const mover = movers.find((m) => m.cardId === quote.card.id);
   const fresh = quote.perSource.filter((p) => p.avgPrice != null && (p.provenance === 'live' || p.provenance === 'sample' || p.provenance === 'synthetic'));
   const anyData = quote.perSource.filter((p) => p.avgPrice != null);
@@ -473,7 +473,8 @@ function DetailPanel({ detail, now, movers }: { detail: CardDetail | null; now: 
         <div className="stat"><div className="k">Volume 7D</div><div className="v">{stats.vol7 || '—'}</div></div>
       </div>
 
-      <div className="detail-cols">
+      <div className="detail-cols with-art">
+        <CardArt images={images} card={quote.card} />
         <div>
           <div className="card-sec">
             <div className="sec-label">Fair market value</div>
@@ -514,6 +515,35 @@ function DetailPanel({ detail, now, movers }: { detail: CardDetail | null; now: 
           <PricesByGrade card={quote} graded={graded} raw={raw} now={now} />
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Card art with a candidate fallback chain (Piltover Archive CDN →
+ *  TCGplayer product image). SAMPLE-mode cards get no candidates and render
+ *  a labeled placeholder — demo cards never wear real art. */
+function CardArt({ images, card }: { images: string[]; card: CardDetail['quote']['card'] }) {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => setIdx(0), [card.id, images.join('|')]);
+  if (!images.length || idx >= images.length) {
+    return (
+      <div className="cardart placeholder">
+        <div className="ph-name">{card.name}</div>
+        <div className="ph-sub">{card.setName}{card.number ? ` · ${card.number}` : ''}</div>
+        <div className="ph-tag">{images.length ? 'ART UNAVAILABLE' : 'SAMPLE · NO ART'}</div>
+      </div>
+    );
+  }
+  const host = new URL(images[idx]).host;
+  return (
+    <div className="cardart">
+      <img
+        src={images[idx]}
+        alt={card.name}
+        title={`art: ${host}`}
+        onError={() => setIdx((i) => i + 1)}
+      />
+      <div className="art-credit">{host.includes('piltover') ? 'Piltover Archive' : 'TCGplayer'}</div>
     </div>
   );
 }

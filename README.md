@@ -67,6 +67,7 @@ terminal never blanks and never crashes.
 - **eBay** — official Browse API (free developer account; see `.env.example`).
 - **X wire** — [twitterapi.io](https://twitterapi.io) (pay-per-request) with
   Nitter RSS fallback.
+- **Card art** — [Piltover Archive](https://piltoverarchive.com) CDN (Riot's official Riftbound site) by card code, falling back to TCGplayer product images by productId. Browser-side with an error-fallback chain; no keys. Sample-mode cards render a labeled placeholder — demo cards never wear real art.
 
 ## Development
 

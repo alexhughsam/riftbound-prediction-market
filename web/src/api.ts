@@ -105,6 +105,7 @@ export interface CardDetail {
   stats: CardStats;
   graded: GradedVariant[];
   raw: { card: Card; quote: CardQuote } | null;
+  images: string[];
   links: { tcgplayer: string; ebay: string };
   history: { tcgplayer: Snapshot[]; ebay: Snapshot[] };
 }

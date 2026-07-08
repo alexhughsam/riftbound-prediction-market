@@ -3,6 +3,7 @@ import { alertsRepo, cardsRepo, feedRepo, portfolioRepo, snapshotsRepo, watchlis
 import type { Poller } from '../core/poller.js';
 import { quoteCard, searchQuotes } from '../core/quotes.js';
 import { gradedVariantsOf, parseGrade, rawCounterpartOf } from '../core/grades.js';
+import { imageCandidates } from '../core/images.js';
 import { config } from '../config.js';
 import type { Card, SourceId } from '../types.js';
 
@@ -84,6 +85,7 @@ export function registerApi(app: FastifyInstance, poller: Poller) {
       stats: cardStats(card.id),
       graded,
       raw: raw ? { card: raw, quote: quoteCard(raw, poller) } : null,
+      images: imageCandidates(card, poller.mode === 'sample'),
       links: { tcgplayer: venueUrl(card, 'tcgplayer'), ebay: venueUrl(card, 'ebay') },
       history: {
         tcgplayer: snapshotsRepo.seriesForCard(card.id, 'tcgplayer', since),
