@@ -87,6 +87,53 @@ export interface Snapshot {
   provenance: Provenance;
 }
 
+export interface CardStats {
+  d7Pct: number | null;
+  d30Pct: number | null;
+  liquidity: number;
+  vol7: number;
+}
+
+export interface GradedVariant {
+  card: Card;
+  grade: { company: string; grade: number } | null;
+  quote: CardQuote;
+}
+
+export interface CardDetail {
+  quote: CardQuote;
+  stats: CardStats;
+  graded: GradedVariant[];
+  raw: { card: Card; quote: CardQuote } | null;
+  links: { tcgplayer: string; ebay: string };
+  history: { tcgplayer: Snapshot[]; ebay: Snapshot[] };
+}
+
+export interface AlertItem {
+  id: number;
+  cardId: number;
+  direction: 'above' | 'below';
+  threshold: number;
+  basis: 'best' | 'avg';
+  createdTs: number;
+  triggeredTs: number | null;
+  triggeredPrice: number | null;
+  card: Card | null;
+}
+
+export interface PortfolioItem {
+  cardId: number;
+  qty: number;
+  costBasis: number;
+  addedTs: number;
+  card: Card | null;
+  mark: number | null;
+  value: number | null;
+  pnl: number | null;
+  pnlPct: number | null;
+  provenance: Provenance | null;
+}
+
 async function j<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
   if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
@@ -98,8 +145,24 @@ export const api = {
   movers: () => j<{ movers: Mover[]; computedTs: number }>('/api/movers'),
   search: (q: string) => j<{ quotes: CardQuote[] }>(`/api/search?q=${encodeURIComponent(q)}`),
   board: () => j<{ quotes: CardQuote[] }>('/api/board'),
-  card: (id: number) =>
-    j<{ quote: CardQuote; history: { tcgplayer: Snapshot[]; ebay: Snapshot[] } }>(`/api/card/${id}`),
+  card: (id: number) => j<CardDetail>(`/api/card/${id}`),
+  alerts: () => j<{ alerts: AlertItem[] }>('/api/alerts'),
+  addAlert: (cardId: number, direction: 'above' | 'below', threshold: number) =>
+    j('/api/alerts', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ cardId, direction, threshold }),
+    }),
+  removeAlert: (id: number) => j(`/api/alerts/${id}`, { method: 'DELETE' }),
+  portfolio: () =>
+    j<{ rows: PortfolioItem[]; totals: { value: number; cost: number; pnl: number } }>('/api/portfolio'),
+  addPortfolio: (cardId: number, qty: number, costBasis: number) =>
+    j('/api/portfolio', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ cardId, qty, costBasis }),
+    }),
+  removePortfolio: (cardId: number) => j(`/api/portfolio/${cardId}`, { method: 'DELETE' }),
   feed: () => j<{ items: FeedItem[]; accounts: string[]; health: SourceHealth }>('/api/feed'),
   watchlist: () => j<{ quotes: CardQuote[] }>('/api/watchlist'),
   watch: (cardId: number) =>

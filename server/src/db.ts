@@ -66,6 +66,24 @@ CREATE TABLE IF NOT EXISTS watchlist (
   added_ts INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS alerts (
+  id INTEGER PRIMARY KEY,
+  card_id INTEGER NOT NULL REFERENCES cards(id),
+  direction TEXT NOT NULL CHECK (direction IN ('above','below')),
+  threshold REAL NOT NULL,
+  basis TEXT NOT NULL DEFAULT 'best',
+  created_ts INTEGER NOT NULL,
+  triggered_ts INTEGER,
+  triggered_price REAL
+);
+
+CREATE TABLE IF NOT EXISTS portfolio (
+  card_id INTEGER PRIMARY KEY REFERENCES cards(id),
+  qty INTEGER NOT NULL,
+  cost_basis REAL NOT NULL,
+  added_ts INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS kv (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
@@ -243,6 +261,78 @@ export const watchlistRepo = {
   },
   ids(): number[] {
     return (db.prepare('SELECT card_id FROM watchlist ORDER BY added_ts').all() as any[]).map((r) => r.card_id);
+  },
+};
+
+export interface AlertRow {
+  id: number;
+  cardId: number;
+  direction: 'above' | 'below';
+  threshold: number;
+  basis: 'best' | 'avg';
+  createdTs: number;
+  triggeredTs: number | null;
+  triggeredPrice: number | null;
+}
+
+export const alertsRepo = {
+  add(cardId: number, direction: 'above' | 'below', threshold: number, basis: 'best' | 'avg' = 'best'): number {
+    const r = db
+      .prepare('INSERT INTO alerts (card_id, direction, threshold, basis, created_ts) VALUES (?,?,?,?,?)')
+      .run(cardId, direction, threshold, basis, Date.now());
+    return Number(r.lastInsertRowid);
+  },
+  remove(id: number) {
+    db.prepare('DELETE FROM alerts WHERE id=?').run(id);
+  },
+  all(): AlertRow[] {
+    return (db.prepare('SELECT * FROM alerts ORDER BY created_ts DESC').all() as any[]).map(mapAlert);
+  },
+  active(): AlertRow[] {
+    return (db.prepare('SELECT * FROM alerts WHERE triggered_ts IS NULL').all() as any[]).map(mapAlert);
+  },
+  trigger(id: number, price: number) {
+    db.prepare('UPDATE alerts SET triggered_ts=?, triggered_price=? WHERE id=?').run(Date.now(), price, id);
+  },
+};
+
+function mapAlert(r: any): AlertRow {
+  return {
+    id: r.id,
+    cardId: r.card_id,
+    direction: r.direction,
+    threshold: r.threshold,
+    basis: r.basis,
+    createdTs: r.created_ts,
+    triggeredTs: r.triggered_ts,
+    triggeredPrice: r.triggered_price,
+  };
+}
+
+export interface PortfolioRow {
+  cardId: number;
+  qty: number;
+  costBasis: number; // per-unit acquisition price
+  addedTs: number;
+}
+
+export const portfolioRepo = {
+  upsert(cardId: number, qty: number, costBasis: number) {
+    db.prepare(
+      `INSERT INTO portfolio (card_id, qty, cost_basis, added_ts) VALUES (?,?,?,?)
+       ON CONFLICT(card_id) DO UPDATE SET qty=excluded.qty, cost_basis=excluded.cost_basis`,
+    ).run(cardId, qty, costBasis, Date.now());
+  },
+  remove(cardId: number) {
+    db.prepare('DELETE FROM portfolio WHERE card_id=?').run(cardId);
+  },
+  all(): PortfolioRow[] {
+    return (db.prepare('SELECT * FROM portfolio ORDER BY added_ts').all() as any[]).map((r) => ({
+      cardId: r.card_id,
+      qty: r.qty,
+      costBasis: r.cost_basis,
+      addedTs: r.added_ts,
+    }));
   },
 };
 

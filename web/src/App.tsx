@@ -1,25 +1,32 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   api, fmtAge, fmtPrice, provTitle, PROV_LABEL,
-  type CardQuote, type FeedItem, type Mover, type Provenance, type Snapshot, type SourceHealth, type SourceId, type Status,
+  type AlertItem, type CardDetail, type CardQuote, type FeedItem, type Mover, type PortfolioItem,
+  type Provenance, type Snapshot, type SourceHealth, type SourceId, type Status,
 } from './api';
 
 type Zone = 'movers' | 'search' | 'feed';
+type RightView = 'board' | 'search' | 'alerts' | 'portfolio';
 
 export function App() {
   const [status, setStatus] = useState<Status | null>(null);
   const [movers, setMovers] = useState<Mover[]>([]);
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [quotes, setQuotes] = useState<CardQuote[]>([]);
+  const [alerts, setAlerts] = useState<AlertItem[]>([]);
+  const [portfolio, setPortfolio] = useState<{ rows: PortfolioItem[]; totals: { value: number; cost: number; pnl: number } } | null>(null);
+  const [rightView, setRightView] = useState<RightView>('board');
   const [searchLabel, setSearchLabel] = useState('');
   const [selCard, setSelCard] = useState<number | null>(null);
-  const [detail, setDetail] = useState<{ quote: CardQuote; history: { tcgplayer: Snapshot[]; ebay: Snapshot[] } } | null>(null);
+  const [detail, setDetail] = useState<CardDetail | null>(null);
   const [moverIdx, setMoverIdx] = useState(0);
   const [searchIdx, setSearchIdx] = useState(0);
   const [zone, setZone] = useState<Zone>('movers');
   const [msg, setMsg] = useState<{ text: string; err?: boolean }>({ text: "type HELP for commands · '/' focuses command line" });
   const [now, setNow] = useState(Date.now());
   const cmdRef = useRef<HTMLInputElement>(null);
+  const rightViewRef = useRef<RightView>('board');
+  rightViewRef.current = rightView;
 
   const refreshCore = useCallback(async () => {
     const [st, mv] = await Promise.all([api.status(), api.movers()]);
@@ -27,24 +34,33 @@ export function App() {
     setMovers(mv.movers);
   }, []);
   const refreshFeed = useCallback(async () => setFeed((await api.feed()).items), []);
-  const searchedRef = useRef(false);
+  const refreshAlerts = useCallback(async () => setAlerts((await api.alerts()).alerts), []);
+  const refreshPortfolio = useCallback(async () => setPortfolio(await api.portfolio()), []);
   const refreshBoard = useCallback(async () => {
-    if (searchedRef.current) return;
+    if (rightViewRef.current !== 'board') return;
     const r = await api.board();
-    if (!searchedRef.current) setQuotes(r.quotes);
+    if (rightViewRef.current === 'board') setQuotes(r.quotes);
   }, []);
 
   useEffect(() => {
     void refreshCore();
     void refreshFeed();
     void refreshBoard();
+    void refreshAlerts();
     const es = new EventSource('/api/stream');
-    es.addEventListener('cycle', () => { void refreshCore(); void refreshFeed(); void refreshBoard(); });
+    es.addEventListener('cycle', () => {
+      void refreshCore(); void refreshFeed(); void refreshBoard();
+      if (rightViewRef.current === 'portfolio') void refreshPortfolio();
+    });
     es.addEventListener('feed', () => void refreshFeed());
     es.addEventListener('health', () => void refreshCore());
+    es.addEventListener('alert', () => {
+      void refreshAlerts();
+      setMsg({ text: '⚠ ALERT TRIGGERED — type AL to view', err: false });
+    });
     const clock = setInterval(() => setNow(Date.now()), 1000);
     return () => { es.close(); clearInterval(clock); };
-  }, [refreshCore, refreshFeed, refreshBoard]);
+  }, [refreshCore, refreshFeed, refreshBoard, refreshAlerts, refreshPortfolio]);
 
   useEffect(() => {
     if (selCard == null) return setDetail(null);
@@ -55,7 +71,6 @@ export function App() {
     return () => { dead = true; clearInterval(t); };
   }, [selCard, status?.cycleCount]);
 
-  // keep selection following the movers panel unless user picked elsewhere
   useEffect(() => {
     if (zone === 'movers' && movers[moverIdx]) setSelCard(movers[moverIdx].cardId);
   }, [movers, moverIdx, zone]);
@@ -66,23 +81,59 @@ export function App() {
     const [cmd, ...rest] = line.split(/\s+/);
     const arg = rest.join(' ');
     const c = cmd.toLowerCase();
+    const rowCard = (n: string): number | null =>
+      quotes[Number(n) - 1]?.card.id ?? movers[Number(n) - 1]?.cardId ?? selCard;
     try {
       if (c === 'help' || c === '?') {
-        setMsg({ text: 'S <card[,card…]> search · W/UW <row> watch · O <row> open · K/R tcg|ebay|feed kill/restore · INJECT <row> JUMP|VOL [pct] · MV/FD focus' });
+        setMsg({ text: 'S <cards> · W <row> · ALERT <row> ABOVE|BELOW <px> · PF ADD <row> <qty> <cost> · AL/PF/BD views · K/R <src> · INJECT <row> JUMP|VOL' });
       } else if (c === 's' || c === 'search') {
         const r = await api.search(arg);
-        searchedRef.current = true;
-        setQuotes(r.quotes); setSearchLabel(arg); setSearchIdx(0); setZone('search');
+        setQuotes(r.quotes); setSearchLabel(arg); setSearchIdx(0); setZone('search'); setRightView('search');
         if (r.quotes[0]) setSelCard(r.quotes[0].card.id);
         setMsg({ text: `${r.quotes.length} result(s) for "${arg}"` });
+      } else if (c === 'bd' || c === 'board') {
+        setRightView('board'); setSearchLabel('');
+        const r = await api.board(); setQuotes(r.quotes);
+      } else if (c === 'al' || c === 'alerts') {
+        setRightView('alerts'); await refreshAlerts();
+      } else if (c === 'pf' || c === 'portfolio') {
+        if (/^add\b/i.test(arg)) {
+          const [, rowS, qtyS, costS] = arg.split(/\s+/);
+          const id = rowCard(rowS);
+          if (id == null || !(Number(qtyS) > 0)) throw new Error('usage: PF ADD <row> <qty> <cost>');
+          await api.addPortfolio(id, Number(qtyS), Number(costS ?? 0));
+          setMsg({ text: `portfolio: card #${id} × ${qtyS} @ ${costS ?? 0}` });
+        } else if (/^rm\b/i.test(arg)) {
+          const [, rowS] = arg.split(/\s+/);
+          const id = portfolio?.rows[Number(rowS) - 1]?.cardId ?? rowCard(rowS);
+          if (id == null) throw new Error('usage: PF RM <row>');
+          await api.removePortfolio(id);
+        }
+        setRightView('portfolio'); await refreshPortfolio();
+      } else if (c === 'alert') {
+        const [rowS, dirS, pxS] = rest;
+        if (/^rm$/i.test(rowS ?? '')) {
+          const a = alerts[Number(dirS) - 1];
+          if (!a) throw new Error('usage: ALERT RM <row-in-AL-view>');
+          await api.removeAlert(a.id); await refreshAlerts();
+          setMsg({ text: `alert #${a.id} removed` });
+          return;
+        }
+        const id = rowCard(rowS);
+        const dir = /^ab/i.test(dirS ?? '') ? 'above' : /^be/i.test(dirS ?? '') ? 'below' : null;
+        const px = Number(pxS);
+        if (id == null || !dir || !(px > 0)) throw new Error('usage: ALERT <row> ABOVE|BELOW <price>  (or ALERT RM <row>)');
+        await api.addAlert(id, dir, px);
+        await refreshAlerts();
+        setMsg({ text: `armed: card #${id} ${dir} ${px} (best px basis)` });
       } else if (c === 'w' || c === 'watch') {
-        const q = quotes[Number(arg) - 1] ?? (selCard != null ? { card: { id: selCard } } : null);
-        if (!q) throw new Error('no row selected');
-        await api.watch(q.card.id); setMsg({ text: `watching card #${q.card.id}` });
+        const id = rowCard(arg);
+        if (id == null) throw new Error('no row selected');
+        await api.watch(id); setMsg({ text: `watching card #${id}` });
       } else if (c === 'uw' || c === 'unwatch') {
-        const q = quotes[Number(arg) - 1] ?? (selCard != null ? { card: { id: selCard } } : null);
-        if (!q) throw new Error('no row selected');
-        await api.unwatch(q.card.id); setMsg({ text: `unwatched card #${q.card.id}` });
+        const id = rowCard(arg);
+        if (id == null) throw new Error('no row selected');
+        await api.unwatch(id); setMsg({ text: `unwatched card #${id}` });
       } else if (c === 'o' || c === 'open') {
         const q = quotes[Number(arg) - 1];
         if (!q) throw new Error(`no search row ${arg}`);
@@ -95,7 +146,7 @@ export function App() {
         void refreshCore();
       } else if (c === 'inject') {
         const [rowS, kindS, pctS] = rest;
-        const target = quotes[Number(rowS) - 1]?.card.id ?? movers[Number(rowS) - 1]?.cardId ?? selCard;
+        const target = rowCard(rowS);
         if (target == null) throw new Error('usage: INJECT <row> JUMP|VOL [pct]');
         const kind = /vol/i.test(kindS ?? '') ? 'volume_spike' : 'price_jump';
         await api.inject(target, kind, pctS ? Number(pctS) : undefined);
@@ -103,19 +154,16 @@ export function App() {
       } else if (c === 'mv' || c === 'movers') { setZone('movers');
       } else if (c === 'fd' || c === 'feed') { setZone('feed');
       } else {
-        // bare text = search
         const r = await api.search(line);
-        searchedRef.current = true;
-        setQuotes(r.quotes); setSearchLabel(line); setSearchIdx(0); setZone('search');
+        setQuotes(r.quotes); setSearchLabel(line); setSearchIdx(0); setZone('search'); setRightView('search');
         if (r.quotes[0]) setSelCard(r.quotes[0].card.id);
         setMsg({ text: `${r.quotes.length} result(s) for "${line}"` });
       }
     } catch (err: any) {
-      setMsg({ text: String(err?.message ?? err).slice(0, 120), err: true });
+      setMsg({ text: String(err?.message ?? err).slice(0, 130), err: true });
     }
-  }, [quotes, movers, selCard, refreshCore]);
+  }, [quotes, movers, selCard, alerts, portfolio, refreshCore, refreshAlerts, refreshPortfolio]);
 
-  // global keys
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target === cmdRef.current) {
@@ -148,15 +196,17 @@ export function App() {
   }, [zone, movers, moverIdx, quotes, searchIdx]);
 
   const isSample = status?.mode === 'sample';
+  const armedAlerts = alerts.filter((a) => !a.triggeredTs).length;
+  const firedAlerts = alerts.filter((a) => a.triggeredTs).length;
 
   return (
     <div className="term">
-      <TopBar status={status} now={now} />
+      <TopBar status={status} now={now} armed={armedAlerts} fired={firedAlerts} />
       <div className="main">
         <div className={`panel ${zone === 'movers' ? 'focused' : ''}`}>
-          {isSample && <div className="banner-sample">SAMPLE DATA — SIMULATED MARKET · NO REAL PRICES ON SCREEN</div>}
-          <div className="panel-title">MOVERS — EARLY SIGNAL <span className="cnt">{movers.length}</span>
-            <span className="hint">↑↓ select · ⏎ detail · score = |Δ24h| + activityσ + spread</span>
+          {isSample && <div className="banner-sample">Sample data — simulated market · no real prices on screen</div>}
+          <div className="panel-title">Movers — early signal <span className="cnt">{movers.length}</span>
+            <span className="hint">↑↓ select · ⏎ detail · score = |Δ24h| + activity σ + spread</span>
           </div>
           <div className="panel-body">
             <MoversTable movers={movers} sel={zone === 'movers' ? moverIdx : -1} now={now}
@@ -166,26 +216,39 @@ export function App() {
         </div>
 
         <div className={`panel ${zone === 'search' ? 'focused' : ''}`}>
-          <div className="panel-title">{searchLabel ? <>SEARCH / QUOTES <span className="cnt">“{truncate(searchLabel, 42)}”</span></> : <>BOARD — TOP VALUE <span className="cnt">{quotes.length}</span></>}
-            <span className="hint">S name[, name…] · best px across TCG+EBAY</span>
+          <div className="panel-title">
+            {rightView === 'board' && <>Board — top value <span className="cnt">{quotes.length}</span></>}
+            {rightView === 'search' && <>Search <span className="cnt">“{truncate(searchLabel, 40)}”</span></>}
+            {rightView === 'alerts' && <>Alerts <span className="cnt">{armedAlerts} armed · {firedAlerts} fired</span></>}
+            {rightView === 'portfolio' && <>Portfolio <span className="cnt">{portfolio?.rows.length ?? 0} positions</span></>}
+            <span className="hint">S search · BD board · AL alerts · PF portfolio</span>
           </div>
           <div className="panel-body">
-            <SearchTable quotes={quotes} sel={zone === 'search' ? searchIdx : -1} now={now}
-              onPick={(i) => { setZone('search'); setSearchIdx(i); setSelCard(quotes[i].card.id); }} />
+            {(rightView === 'board' || rightView === 'search') && (
+              <SearchTable quotes={quotes} sel={zone === 'search' ? searchIdx : -1} now={now}
+                onPick={(i) => { setZone('search'); setSearchIdx(i); setSelCard(quotes[i].card.id); }} />
+            )}
+            {rightView === 'alerts' && <AlertsTable alerts={alerts} now={now} onPick={(id) => setSelCard(id)} />}
+            {rightView === 'portfolio' && <PortfolioTable pf={portfolio} now={now} onPick={(id) => setSelCard(id)} />}
           </div>
+          {rightView === 'portfolio' && portfolio && (
+            <div className="totalsline">
+              <span>VALUE <b>{fmtPrice(portfolio.totals.value)}</b></span>
+              <span>COST <b>{fmtPrice(portfolio.totals.cost)}</b></span>
+              <span>P/L <b className={portfolio.totals.pnl >= 0 ? 'up' : 'down'}>{portfolio.totals.pnl >= 0 ? '+' : ''}{fmtPrice(portfolio.totals.pnl)}</b></span>
+            </div>
+          )}
         </div>
 
         <div className="panel">
-          <div className="panel-title">CARD DETAIL {detail && <span className="cnt">#{detail.quote.card.id}</span>}
-            <span className="hint">avg = source market px · best = lowest ask incl. ship where known</span>
+          <div className="panel-title">Card detail {detail && <span className="cnt">#{detail.quote.card.id}</span>}
+            <span className="hint">ALERT &lt;row&gt; ABOVE|BELOW &lt;px&gt; · PF ADD &lt;row&gt; &lt;qty&gt; &lt;cost&gt;</span>
           </div>
-          <div className="panel-body">
-            <DetailPanel detail={detail} now={now} movers={movers} />
-          </div>
+          <DetailPanel detail={detail} now={now} movers={movers} />
         </div>
 
         <div className={`panel ${zone === 'feed' ? 'focused' : ''}`}>
-          <div className="panel-title">WIRE — X FEED <span className="cnt">{feed.length}</span>
+          <div className="panel-title">Wire — X feed <span className="cnt">{feed.length}</span>
             <span className="hint">{(status?.sources.find((s) => s.source === 'feed')?.state ?? '').toUpperCase()}</span>
           </div>
           <div className="panel-body">
@@ -201,22 +264,24 @@ export function App() {
   );
 }
 
-/* ---------------- components ---------------- */
+/* ---------------- top bar / status ---------------- */
 
-function TopBar({ status, now }: { status: Status | null; now: number }) {
+function TopBar({ status, now, armed, fired }: { status: Status | null; now: number; armed: number; fired: number }) {
   const countdown = status ? Math.max(0, Math.ceil((status.nextCycleTs - now) / 1000)) : null;
   const overall = status?.overall ?? 'down';
   return (
     <div className="topbar">
-      <span className="brand">RBT<span className="blk">▮</span> RIFTBOUND TERMINAL</span>
+      <span className="brand">RBT<span className="blk">▮</span> Riftbound Terminal</span>
       <span className={`mode-badge ${overall}`}>{status ? overall.toUpperCase() : '·····'}</span>
       <span className="kv">MKTS <b>TCGPLAYER · EBAY</b></span>
       <span className="sep">│</span>
       <span className="kv">CARDS <b>{status?.cards ?? '—'}</b></span>
       <span className="sep">│</span>
+      <span className="kv">ALERTS <b>{armed}</b>{fired > 0 && <b className="warn"> ·{fired}!</b>}</span>
+      <span className="sep">│</span>
       <span className="kv">CYCLE <b>#{status?.cycleCount ?? '—'}</b> NEXT <b>{countdown != null ? `${countdown}s` : '—'}</b></span>
       <span className="spring" />
-      <span className="kv">{new Date(now).toISOString().slice(0, 19).replace('T', ' ')} UTC</span>
+      <span className="clock">{new Date(now).toISOString().slice(0, 19).replace('T', ' ')} UTC</span>
     </div>
   );
 }
@@ -225,6 +290,8 @@ function Prov({ p, source, ts, now }: { p: Provenance | null; source: string; ts
   if (!p) return null;
   return <span className={`prov ${p}`} title={provTitle(p, source, ts, now)}>{PROV_LABEL[p]}</span>;
 }
+
+/* ---------------- movers ---------------- */
 
 function MoversTable({ movers, sel, now, onPick }: {
   movers: Mover[]; sel: number; now: number; onPick: (i: number) => void;
@@ -249,9 +316,9 @@ function MoversTable({ movers, sel, now, onPick }: {
               <td className="l">{m.card.name}</td>
               <td className="l dim">{m.card.setName}{m.card.number ? ` ${m.card.number}` : ''}</td>
               <td className={m.pct24h == null ? 'dim' : m.pct24h >= 0 ? 'up' : 'down'}>
-                {m.pct24h == null ? '—' : `${m.pct24h >= 0 ? '+' : ''}${m.pct24h.toFixed(1)}%`}
+                {m.pct24h == null ? '—' : `${m.pct24h >= 0 ? '▲ +' : '▼ '}${m.pct24h.toFixed(1)}%`}
               </td>
-              <td className={m.volumeZ != null && m.volumeZ >= 1.5 ? 'amber' : 'dim'}>
+              <td className={m.volumeZ != null && m.volumeZ >= 1.5 ? 'warn' : 'dim'}>
                 {m.volumeZ == null ? '—' : `${m.volumeZ.toFixed(1)}σ`}
               </td>
               <td className={m.spreadPct != null && m.spreadPct >= 4 ? 'cyan' : 'dim'}>
@@ -259,7 +326,7 @@ function MoversTable({ movers, sel, now, onPick }: {
               </td>
               <td>{tcg ? <>{fmtPrice(tcg.price)}<Prov p={tcg.provenance} source="TCGplayer" ts={tcg.ts} now={now} /></> : <span className="faint">—</span>}</td>
               <td>{eb ? <>{fmtPrice(eb.price)}<Prov p={eb.provenance} source="eBay" ts={eb.ts} now={now} /></> : <span className="faint">—</span>}</td>
-              <td className="l"><span className="scorebar" style={{ width: `${Math.max(3, (m.score / maxScore) * 56)}px` }} /> <span className="dim">{m.score.toFixed(1)}</span></td>
+              <td className="l"><span className="scorebar" style={{ width: `${Math.max(4, (m.score / maxScore) * 52)}px` }} /> <span className="dim">{m.score.toFixed(1)}</span></td>
             </tr>
           );
         })}
@@ -272,7 +339,7 @@ function WhyLine({ mover, now }: { mover: Mover; now: number }) {
   return (
     <div className="why">
       <div className="headline">▸ {mover.why.headline}</div>
-      <div className="factors">
+      <div className="factors dim">
         {mover.why.factors.join(' · ')}
         {mover.why.feedRefs.map((r, i) => (
           <span key={i}> · <span className="fref">@{r.account}</span> <span className="faint">({fmtAge(r.ts, now)} ago):</span> “{truncate(r.text, 90)}”</span>
@@ -281,6 +348,8 @@ function WhyLine({ mover, now }: { mover: Mover; now: number }) {
     </div>
   );
 }
+
+/* ---------------- right panel views ---------------- */
 
 function SearchTable({ quotes, sel, now, onPick }: {
   quotes: CardQuote[]; sel: number; now: number; onPick: (i: number) => void;
@@ -314,65 +383,267 @@ function SearchTable({ quotes, sel, now, onPick }: {
   );
 }
 
-function DetailPanel({ detail, now, movers }: {
-  detail: { quote: CardQuote; history: { tcgplayer: Snapshot[]; ebay: Snapshot[] } } | null;
-  now: number;
-  movers: Mover[];
-}) {
-  if (!detail) return <div className="empty">select a mover or search result — ⏎ opens it here</div>;
-  const { quote, history } = detail;
-  const mover = movers.find((m) => m.cardId === quote.card.id);
+function AlertsTable({ alerts, now, onPick }: { alerts: AlertItem[]; now: number; onPick: (cardId: number) => void }) {
+  if (!alerts.length) return <div className="empty">no alerts — <kbd>ALERT &lt;row&gt; ABOVE|BELOW &lt;price&gt;</kbd> arms one on the best cross-venue price</div>;
   return (
-    <div className="detail-grid">
-      <div className="detail-left">
-        <div className="detail-name">{quote.card.name}</div>
-        <div className="detail-sub">
-          {quote.card.setName}{quote.card.number ? ` · ${quote.card.number}` : ''}
-          {quote.card.rarity ? ` · ${quote.card.rarity}` : ''} · {quote.card.kind.toUpperCase()}
-        </div>
-        <table>
-          <thead>
-            <tr><th className="l">VENUE</th><th>AVG</th><th>BEST</th><th>LSTG</th><th>AGE</th><th className="l">STATE</th></tr>
-          </thead>
-          <tbody>
-            {quote.perSource.map((p) => (
-              <tr key={p.source}>
-                <td className="l cyan">{p.source.toUpperCase()}</td>
-                <td>{fmtPrice(p.avgPrice)}<Prov p={p.provenance} source={p.source} ts={p.ts} now={now} /></td>
-                <td className={p.bestPrice != null && quote.best?.source === p.source ? 'up' : ''}>{fmtPrice(p.bestPrice)}</td>
-                <td className="dim">{p.listingCount ?? '—'}</td>
-                <td className="dim">{fmtAge(p.ts, now)}</td>
-                <td className={`l ${p.state === 'live' ? 'up' : p.state === 'down' ? 'down' : 'dim'}`}>{p.state.toUpperCase()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {quote.best && (
-          <div className="kvrow" style={{ marginTop: 4 }}>
-            <span className="k">BEST NOW</span>
-            <span><span className="up">{fmtPrice(quote.best.price)}</span> on <span className="cyan">{quote.best.source.toUpperCase()}</span>
-              <Prov p={quote.best.provenance} source={quote.best.source} ts={quote.best.ts} now={now} /></span>
-          </div>
-        )}
-        {mover && (
-          <div style={{ marginTop: 4 }}>
-            <div className="k faint">SIGNAL READ</div>
-            <div>{mover.why.headline}</div>
-            <div className="dim">{mover.why.factors.join(' · ')}</div>
-          </div>
-        )}
+    <table>
+      <thead>
+        <tr><th className="l">#</th><th className="l">CARD</th><th className="l">COND</th><th>PX</th><th className="l">STATUS</th></tr>
+      </thead>
+      <tbody>
+        {alerts.map((a, i) => (
+          <tr key={a.id} className="row" onClick={() => a.card && onPick(a.card.id)}>
+            <td className="l rankcell">{i + 1}</td>
+            <td className="l">{a.card?.name ?? `#${a.cardId}`}</td>
+            <td className="l dim">{a.direction === 'above' ? '≥' : '≤'} {fmtPrice(a.threshold)} ({a.basis})</td>
+            <td>{a.triggeredPrice != null ? fmtPrice(a.triggeredPrice) : '—'}</td>
+            <td className="l">
+              {a.triggeredTs
+                ? <span className="warn">FIRED {fmtAge(a.triggeredTs, now)} ago</span>
+                : <span className="mint">ARMED</span>}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function PortfolioTable({ pf, now, onPick }: {
+  pf: { rows: PortfolioItem[]; totals: { value: number; cost: number; pnl: number } } | null;
+  now: number;
+  onPick: (cardId: number) => void;
+}) {
+  if (!pf || !pf.rows.length) return <div className="empty">empty portfolio — <kbd>PF ADD &lt;row&gt; &lt;qty&gt; &lt;cost-each&gt;</kbd></div>;
+  return (
+    <table>
+      <thead>
+        <tr><th className="l">#</th><th className="l">CARD</th><th>QTY</th><th>COST</th><th>MARK</th><th>P/L</th><th>P/L%</th></tr>
+      </thead>
+      <tbody>
+        {pf.rows.map((r, i) => (
+          <tr key={r.cardId} className="row" onClick={() => r.card && onPick(r.card.id)}>
+            <td className="l rankcell">{i + 1}</td>
+            <td className="l">{r.card?.name ?? `#${r.cardId}`}</td>
+            <td>{r.qty}</td>
+            <td className="dim">{fmtPrice(r.costBasis)}</td>
+            <td>{fmtPrice(r.mark)}{r.provenance && <Prov p={r.provenance} source="blend" ts={null} now={now} />}</td>
+            <td className={r.pnl == null ? 'dim' : r.pnl >= 0 ? 'up' : 'down'}>{r.pnl == null ? '—' : `${r.pnl >= 0 ? '+' : ''}${fmtPrice(r.pnl)}`}</td>
+            <td className={r.pnlPct == null ? 'dim' : r.pnlPct >= 0 ? 'up' : 'down'}>{r.pnlPct == null ? '—' : `${r.pnlPct >= 0 ? '+' : ''}${r.pnlPct}%`}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+/* ---------------- card detail (Rexa-style) ---------------- */
+
+function DetailPanel({ detail, now, movers }: { detail: CardDetail | null; now: number; movers: Mover[] }) {
+  if (!detail) return <div className="empty">select a mover or search result — ⏎ opens it here</div>;
+  const { quote, stats, graded, raw, links, history } = detail;
+  const mover = movers.find((m) => m.cardId === quote.card.id);
+  const fresh = quote.perSource.filter((p) => p.avgPrice != null && (p.provenance === 'live' || p.provenance === 'sample' || p.provenance === 'synthetic'));
+  const anyData = quote.perSource.filter((p) => p.avgPrice != null);
+  const conf = fresh.length >= 2
+    ? { cls: 'conf-high', label: `HIGH · ${fresh.length} SOURCES` }
+    : fresh.length === 1
+      ? { cls: 'conf-med', label: 'MED · 1 SOURCE' }
+      : anyData.length
+        ? { cls: 'conf-low', label: 'LOW · AGED DATA' }
+        : { cls: 'conf-low', label: 'NO DATA' };
+
+  return (
+    <div className="detail-scroll">
+      <div className="detail-head">
+        <span className="detail-name">{quote.card.name}</span>
+        <span className="chip kind">{quote.card.kind}</span>
+        {quote.card.rarity && <span className="chip kind">{quote.card.rarity}</span>}
+        <span className="detail-sub">{quote.card.setName}{quote.card.number ? ` · ${quote.card.number}` : ''}</span>
+        <span className="detail-actions">
+          <a className="btn" href={links.ebay} target="_blank" rel="noreferrer">eBay →</a>
+          <a className="btn" href={links.tcgplayer} target="_blank" rel="noreferrer">TCGplayer →</a>
+        </span>
       </div>
-      <div className="detail-right">
-        <div className="legendline">14D — <span className="amber">▬ TCG</span> <span className="cyan">▬ EBAY</span> (market px)</div>
-        <Sparkline tcg={history.tcgplayer} ebay={history.ebay} />
-        <HistoryStats history={history} />
+
+      <div className="statstrip">
+        <StatCell k="7D change" v={stats.d7Pct} pct />
+        <StatCell k="30D change" v={stats.d30Pct} pct />
+        <div className="stat"><div className="k">Liquidity</div><div className="v">{stats.liquidity || '—'}<span className="faint" style={{ fontSize: 10 }}> listings</span></div></div>
+        <div className="stat"><div className="k">Volume 7D</div><div className="v">{stats.vol7 || '—'}</div></div>
+      </div>
+
+      <div className="detail-cols">
+        <div>
+          <div className="card-sec">
+            <div className="sec-label">Fair market value</div>
+            <div className="fmv-row">
+              <span className="fmv">{quote.blendedAvg != null ? `$${fmtPrice(quote.blendedAvg)}` : '—'}</span>
+              <span className={`chip ${conf.cls}`}>{conf.label}</span>
+            </div>
+            <div className="sec-label" style={{ marginTop: 6 }}>Multi-source pricing</div>
+            {quote.perSource.map((p) => (
+              <div className="srcline" key={p.source}>
+                <span className="venue">{p.source.toUpperCase()}</span>
+                <span className="meta">{p.listingCount != null ? `${p.listingCount} lstg` : ''} {p.state !== 'live' && p.state !== 'sample' ? p.state.toUpperCase() : ''}</span>
+                <span className="px">
+                  {fmtPrice(p.avgPrice)} <span className="faint">avg</span> · <span className={quote.best?.source === p.source ? 'up' : ''}>{fmtPrice(p.bestPrice)}</span> <span className="faint">best</span>
+                  <Prov p={p.provenance} source={p.source} ts={p.ts} now={now} />
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <GradingRoi quote={quote} graded={graded} raw={raw} now={now} />
+
+          {mover && (
+            <div className="card-sec">
+              <div className="sec-label">Signal read</div>
+              <div>{mover.why.headline}</div>
+              <div className="dim" style={{ fontSize: 11 }}>{mover.why.factors.join(' · ')}</div>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <div className="card-sec">
+            <div className="sec-label">Price history — 14d <span className="mint">▬ TCG</span> <span className="cyan">▬ EBAY</span></div>
+            <Sparkline tcg={history.tcgplayer} ebay={history.ebay} />
+            <HistoryStats history={history} />
+          </div>
+          <PricesByGrade card={quote} graded={graded} raw={raw} now={now} />
+        </div>
       </div>
     </div>
   );
 }
 
+function StatCell({ k, v, pct }: { k: string; v: number | null; pct?: boolean }) {
+  return (
+    <div className="stat">
+      <div className="k">{k}</div>
+      <div className={`v ${v == null ? 'faint' : v >= 0 ? 'up' : 'down'}`}>
+        {v == null ? '—' : `${v >= 0 ? '▲ +' : '▼ '}${v.toFixed(1)}${pct ? '%' : ''}`}
+      </div>
+    </div>
+  );
+}
+
+/** Grading ROI — generalized: expected-graded value comes from the top graded
+ *  variant of this card found in the catalog; the miss-case falls back to the
+ *  next grade down (or the raw price). User controls gem odds and fee. */
+function GradingRoi({ quote, graded, raw, now }: {
+  quote: CardQuote;
+  graded: CardDetail['graded'];
+  raw: CardDetail['raw'];
+  now: number;
+}) {
+  const [odds, setOdds] = useState(70);
+  const [fee, setFee] = useState(25);
+
+  if (quote.card.kind === 'slab') {
+    if (!raw) return null;
+    return (
+      <div className="card-sec">
+        <div className="sec-label">Raw counterpart</div>
+        <div className="srcline">
+          <span>{raw.card.name}</span>
+          <span className="px">{fmtPrice(raw.quote.blendedAvg)} <span className="faint">avg</span>
+            {raw.quote.perSource[0]?.provenance && <Prov p={raw.quote.perSource[0].provenance} source="blend" ts={raw.quote.perSource[0].ts} now={now} />}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  const sorted = [...graded]
+    .filter((g) => g.quote.blendedAvg != null)
+    .sort((a, b) => (b.quote.blendedAvg ?? 0) - (a.quote.blendedAvg ?? 0));
+  const rawPx = quote.blendedAvg;
+  if (!sorted.length || rawPx == null) return null;
+
+  const top = sorted[0];
+  const alt = sorted[1]?.quote.blendedAvg ?? rawPx;
+  const topPx = top.quote.blendedAvg as number;
+  const p = odds / 100;
+  const ev = p * topPx + (1 - p) * alt;
+  const net = ev - fee - rawPx;
+  const roiPct = (net / (rawPx + fee)) * 100;
+  const breakEven = topPx !== alt ? Math.max(0, Math.min(100, ((rawPx + fee - alt) / (topPx - alt)) * 100)) : null;
+  const worth = net > 0;
+
+  return (
+    <div className="card-sec">
+      <div className="sec-label">Grading ROI</div>
+      <div className="fmv-row">
+        <span className={`chip ${worth ? 'verdict-yes' : 'verdict-no'}`}>{worth ? 'Worth grading' : 'Not worth grading'}</span>
+        <span className={`roi-net ${worth ? 'up' : 'down'}`} style={{ marginLeft: 'auto' }}>
+          {net >= 0 ? '▲ +' : '▼ '}${fmtPrice(Math.abs(net))}
+        </span>
+      </div>
+      <div className="roi-sub">net after fee · {roiPct >= 0 ? '+' : ''}{roiPct.toFixed(0)}% ROI</div>
+      <div className="roi-grid">
+        <div><div className="k">Raw now</div><div className="v">${fmtPrice(rawPx)}</div></div>
+        <div><div className="k">Exp. {top.grade ? `${top.grade.company} ${top.grade.grade}` : 'graded'}</div><div className="v">${fmtPrice(topPx)}</div></div>
+        <div><div className="k">Grade fee</div><div className="v">${fee}</div></div>
+      </div>
+      <div className="roi-ctl">
+        <span>{top.grade ? `${top.grade.company} ${top.grade.grade}` : 'top grade'} likelihood</span>
+        <input type="range" min={0} max={100} value={odds} onChange={(e) => setOdds(Number(e.target.value))} />
+        <span className="num" style={{ width: 34, textAlign: 'right' }}>{odds}%</span>
+      </div>
+      <div className="roi-ctl">
+        <span>grading fee</span>
+        <input type="number" min={0} value={fee} onChange={(e) => setFee(Math.max(0, Number(e.target.value)))} />
+      </div>
+      <div className="roi-note">
+        {breakEven != null && <>breaks even at <b>{breakEven.toFixed(0)}%</b> odds · </>}
+        miss-case assumes {sorted[1]?.grade ? `${sorted[1].grade.company} ${sorted[1].grade.grade}` : 'raw value'} · odds are your call — no population data yet
+      </div>
+    </div>
+  );
+}
+
+function PricesByGrade({ card, graded, raw, now }: {
+  card: CardQuote;
+  graded: CardDetail['graded'];
+  raw: CardDetail['raw'];
+  now: number;
+}) {
+  const rows: { chip: string; quote: CardQuote }[] = [];
+  if (card.card.kind === 'slab') {
+    const g = /(PSA|BGS|CGC|SGC)\s*(10|[1-9](?:\.5)?)/i.exec(card.card.name);
+    rows.push({ chip: g ? `${g[1].toUpperCase()} ${g[2]}` : 'GRADED', quote: card });
+    if (raw) rows.push({ chip: 'RAW', quote: raw.quote });
+  } else {
+    for (const g of graded) rows.push({ chip: g.grade ? `${g.grade.company} ${g.grade.grade}` : 'GRADED', quote: g.quote });
+    rows.push({ chip: 'RAW', quote: card });
+  }
+  if (rows.length <= 1) return null;
+  return (
+    <div className="card-sec">
+      <div className="sec-label">Prices by grade</div>
+      {rows.map((r, i) => {
+        const ps = r.quote.perSource.find((p) => p.avgPrice != null);
+        return (
+          <div className="gradeline" key={i}>
+            <span className={`chip ${r.chip === 'RAW' ? 'kind' : 'grade'}`}>{r.chip}</span>
+            <span className="asof">{ps?.ts ? `as of ${fmtAge(ps.ts, now)} ago` : ''}</span>
+            <span className="px">{r.quote.blendedAvg != null ? `$${fmtPrice(r.quote.blendedAvg)}` : '—'}
+              {ps?.provenance && <Prov p={ps.provenance} source={ps.source} ts={ps.ts} now={now} />}
+            </span>
+          </div>
+        );
+      })}
+      <div className="roi-note">graded values are market averages of matching slabs in the catalog</div>
+    </div>
+  );
+}
+
+/* ---------------- chart ---------------- */
+
 function Sparkline({ tcg, ebay }: { tcg: Snapshot[]; ebay: Snapshot[] }) {
-  const W = 220, H = 84;
+  const W = 250, H = 90;
   const all = [...tcg, ...ebay].filter((s) => s.marketPrice != null);
   if (all.length < 2) return <div className="empty">not enough history</div>;
   const t0 = Math.min(...all.map((s) => s.ts));
@@ -380,16 +651,16 @@ function Sparkline({ tcg, ebay }: { tcg: Snapshot[]; ebay: Snapshot[] }) {
   const p0 = Math.min(...all.map((s) => s.marketPrice as number));
   const p1 = Math.max(...all.map((s) => s.marketPrice as number));
   const px = (ts: number) => ((ts - t0) / Math.max(1, t1 - t0)) * (W - 4) + 2;
-  const py = (p: number) => H - 4 - ((p - p0) / Math.max(0.0001, p1 - p0)) * (H - 12);
+  const py = (p: number) => H - 6 - ((p - p0) / Math.max(0.0001, p1 - p0)) * (H - 20);
   const path = (arr: Snapshot[]) =>
     arr.filter((s) => s.marketPrice != null).map((s, i) => `${i ? 'L' : 'M'}${px(s.ts).toFixed(1)},${py(s.marketPrice as number).toFixed(1)}`).join(' ');
   return (
-    <svg className="spark" width={W} height={H}>
-      <rect x="0" y="0" width={W} height={H} fill="#0a0e13" stroke="#1b232c" />
-      <text x="3" y="10" fill="#454f5a" fontSize="9">{fmtPrice(p1)}</text>
-      <text x="3" y={H - 3} fill="#454f5a" fontSize="9">{fmtPrice(p0)}</text>
-      <path d={path(ebay)} fill="none" stroke="#46b8da" strokeWidth="1" opacity="0.9" />
-      <path d={path(tcg)} fill="none" stroke="#e8a33d" strokeWidth="1" opacity="0.95" />
+    <svg className="spark" width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ height: H }}>
+      <rect x="0" y="0" width={W} height={H} fill="#0a0d0c" stroke="#1d2422" rx="6" />
+      <text x="4" y="12" fill="#59635f" fontSize="9" fontFamily="monospace">{fmtPrice(p1)}</text>
+      <text x="4" y={H - 4} fill="#59635f" fontSize="9" fontFamily="monospace">{fmtPrice(p0)}</text>
+      <path d={path(ebay)} fill="none" stroke="#56b8d8" strokeWidth="1.2" opacity="0.85" />
+      <path d={path(tcg)} fill="none" stroke="#35d0a5" strokeWidth="1.2" opacity="0.95" />
     </svg>
   );
 }
@@ -427,6 +698,8 @@ function HistoryStats({ history }: { history: { tcgplayer: Snapshot[]; ebay: Sna
   );
 }
 
+/* ---------------- feed / cmdline / statusbar ---------------- */
+
 function FeedRow({ f, now }: { f: FeedItem; now: number }) {
   return (
     <div className="feed-item">
@@ -458,7 +731,7 @@ function CommandLine({ onRun, msg, inputRef }: {
         }}
         spellCheck={false}
         autoComplete="off"
-        placeholder="S JINX · W 1 · INJECT 1 JUMP 12 · K EBAY · HELP"
+        placeholder="S JINX · ALERT 1 BELOW 40 · PF ADD 1 4 38.50 · INJECT 1 JUMP 12 · K EBAY · HELP"
       />
       <span className={`msg ${msg.err ? 'err' : ''}`}>{msg.text}</span>
     </div>

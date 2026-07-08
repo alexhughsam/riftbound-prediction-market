@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { config } from '../config.js';
-import { feedRepo, snapshotsRepo } from '../db.js';
+import { alertsRepo, feedRepo, snapshotsRepo } from '../db.js';
 import { EbayAdapter } from '../adapters/ebay.js';
 import { XFeedAdapter } from '../adapters/feed.js';
 import { SampleMarket } from '../adapters/sample.js';
@@ -80,9 +80,31 @@ export class Poller extends EventEmitter {
       }
     }
     this.movers = computeMovers();
+    this.evaluateAlerts();
     this.lastCycleTs = Date.now();
     this.cycleCount++;
     this.emit('cycle', { ts: this.lastCycleTs, ms: this.lastCycleTs - t0 });
+  }
+
+  /** Check active alerts against the freshest cross-venue price. */
+  private evaluateAlerts() {
+    for (const alert of alertsRepo.active()) {
+      const prices: number[] = [];
+      for (const source of ['tcgplayer', 'ebay'] as const) {
+        const s = snapshotsRepo.latestForCard(alert.cardId, source);
+        const p = alert.basis === 'best' ? s?.lowPrice : s?.marketPrice;
+        if (p != null) prices.push(p);
+      }
+      if (!prices.length) continue;
+      const price = alert.basis === 'best'
+        ? Math.min(...prices)
+        : prices.reduce((a, b) => a + b, 0) / prices.length;
+      const crossed = alert.direction === 'above' ? price >= alert.threshold : price <= alert.threshold;
+      if (crossed) {
+        alertsRepo.trigger(alert.id, Math.round(price * 100) / 100);
+        this.emit('alert', { id: alert.id, cardId: alert.cardId, price });
+      }
+    }
   }
 
   async pollFeed() {

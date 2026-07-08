@@ -1,8 +1,50 @@
 import type { FastifyInstance } from 'fastify';
-import { cardsRepo, feedRepo, snapshotsRepo, watchlistRepo } from '../db.js';
+import { alertsRepo, cardsRepo, feedRepo, portfolioRepo, snapshotsRepo, watchlistRepo } from '../db.js';
 import type { Poller } from '../core/poller.js';
 import { quoteCard, searchQuotes } from '../core/quotes.js';
+import { gradedVariantsOf, parseGrade, rawCounterpartOf } from '../core/grades.js';
 import { config } from '../config.js';
+import type { Card, SourceId } from '../types.js';
+
+/** Blended % change of market price vs ~h hours ago, strongest venue kept. */
+function pctChange(cardId: number, hours: number): number | null {
+  let out: number | null = null;
+  const now = Date.now();
+  for (const source of ['tcgplayer', 'ebay'] as const) {
+    const series = snapshotsRepo.seriesForCard(cardId, source, now - (hours + 24) * 3600_000);
+    if (series.length < 2) continue;
+    const last = series[series.length - 1];
+    let ref = series[0];
+    for (const s of series) if (s.ts <= last.ts - hours * 3600_000) ref = s;
+    if (last.marketPrice == null || ref.marketPrice == null || ref.marketPrice === 0) continue;
+    const pct = ((last.marketPrice - ref.marketPrice) / ref.marketPrice) * 100;
+    if (out == null || Math.abs(pct) > Math.abs(out)) out = Math.round(pct * 10) / 10;
+  }
+  return out;
+}
+
+function cardStats(cardId: number) {
+  const now = Date.now();
+  let liquidity = 0;
+  let vol7 = 0;
+  for (const source of ['tcgplayer', 'ebay'] as const) {
+    const latest = snapshotsRepo.latestForCard(cardId, source);
+    liquidity += latest?.listingCount ?? 0;
+    for (const s of snapshotsRepo.seriesForCard(cardId, source, now - 7 * 24 * 3600_000)) {
+      vol7 += s.salesVolume ?? 0;
+    }
+  }
+  return { d7Pct: pctChange(cardId, 24 * 7), d30Pct: pctChange(cardId, 24 * 30), liquidity, vol7 };
+}
+
+function venueUrl(card: Card, source: SourceId): string {
+  const q = encodeURIComponent(`riftbound ${card.name}`);
+  return source === 'ebay'
+    ? `https://www.ebay.com/sch/i.html?_nkw=${q}`
+    : card.tcgplayerProductId
+      ? `https://www.tcgplayer.com/product/${card.tcgplayerProductId}`
+      : `https://www.tcgplayer.com/search/all/product?q=${q}`;
+}
 
 export function registerApi(app: FastifyInstance, poller: Poller) {
   app.get('/api/status', async () => ({
@@ -30,13 +72,88 @@ export function registerApi(app: FastifyInstance, poller: Poller) {
     if (!card) return reply.code(404).send({ error: 'card not found' });
     const days = Math.min(30, Number(req.query.days ?? 14));
     const since = Date.now() - days * 24 * 3600_000;
+    const all = cardsRepo.all();
+    const graded = gradedVariantsOf(card, all).map((g) => ({
+      card: g,
+      grade: parseGrade(g.name),
+      quote: quoteCard(g, poller),
+    }));
+    const raw = rawCounterpartOf(card, all);
     return {
       quote: quoteCard(card, poller),
+      stats: cardStats(card.id),
+      graded,
+      raw: raw ? { card: raw, quote: quoteCard(raw, poller) } : null,
+      links: { tcgplayer: venueUrl(card, 'tcgplayer'), ebay: venueUrl(card, 'ebay') },
       history: {
         tcgplayer: snapshotsRepo.seriesForCard(card.id, 'tcgplayer', since),
         ebay: snapshotsRepo.seriesForCard(card.id, 'ebay', since),
       },
     };
+  });
+
+  // ---- Alerts -------------------------------------------------------------
+  app.get('/api/alerts', async () => ({
+    alerts: alertsRepo.all().map((a) => ({ ...a, card: cardsRepo.byId(a.cardId) })),
+  }));
+
+  app.post<{ Body: { cardId: number; direction: 'above' | 'below'; threshold: number; basis?: 'best' | 'avg' } }>(
+    '/api/alerts',
+    async (req, reply) => {
+      const { cardId, direction, threshold, basis } = req.body;
+      if (!cardsRepo.byId(cardId)) return reply.code(404).send({ error: 'card not found' });
+      if (!(threshold > 0) || !['above', 'below'].includes(direction)) {
+        return reply.code(400).send({ error: 'need direction above|below and threshold > 0' });
+      }
+      const id = alertsRepo.add(cardId, direction, threshold, basis ?? 'best');
+      return { ok: true, id };
+    },
+  );
+
+  app.delete<{ Params: { id: string } }>('/api/alerts/:id', async (req) => {
+    alertsRepo.remove(Number(req.params.id));
+    return { ok: true };
+  });
+
+  // ---- Portfolio ----------------------------------------------------------
+  app.get('/api/portfolio', async () => {
+    const rows = portfolioRepo.all().map((p) => {
+      const card = cardsRepo.byId(p.cardId);
+      const quote = card ? quoteCard(card, poller) : null;
+      const mark = quote?.blendedAvg ?? null;
+      return {
+        ...p,
+        card,
+        mark,
+        value: mark != null ? Math.round(mark * p.qty * 100) / 100 : null,
+        pnl: mark != null ? Math.round((mark - p.costBasis) * p.qty * 100) / 100 : null,
+        pnlPct: mark != null && p.costBasis > 0 ? Math.round(((mark - p.costBasis) / p.costBasis) * 1000) / 10 : null,
+        provenance: quote?.perSource.find((s) => s.provenance)?.provenance ?? null,
+      };
+    });
+    const value = rows.reduce((s, r) => s + (r.value ?? 0), 0);
+    const cost = rows.reduce((s, r) => s + r.costBasis * r.qty, 0);
+    return {
+      rows,
+      totals: {
+        value: Math.round(value * 100) / 100,
+        cost: Math.round(cost * 100) / 100,
+        pnl: Math.round((value - cost) * 100) / 100,
+      },
+    };
+  });
+
+  app.post<{ Body: { cardId: number; qty: number; costBasis: number } }>('/api/portfolio', async (req, reply) => {
+    const { cardId, qty, costBasis } = req.body;
+    if (!cardsRepo.byId(cardId)) return reply.code(404).send({ error: 'card not found' });
+    if (!(qty > 0) || !(costBasis >= 0)) return reply.code(400).send({ error: 'need qty > 0 and costBasis >= 0' });
+    portfolioRepo.upsert(cardId, qty, costBasis);
+    return { ok: true };
+  });
+
+  app.delete<{ Params: { id: string } }>('/api/portfolio/:id', async (req) => {
+    portfolioRepo.remove(Number(req.params.id));
+    return { ok: true };
   });
 
   // Default content for the quotes panel before any search: the most
@@ -113,15 +230,18 @@ export function registerApi(app: FastifyInstance, poller: Poller) {
     const onCycle = (d: unknown) => send('cycle', d);
     const onFeed = (d: unknown) => send('feed', d);
     const onHealth = () => send('health', poller.healthAll());
+    const onAlert = (d: unknown) => send('alert', d);
     poller.on('cycle', onCycle);
     poller.on('feed', onFeed);
     poller.on('health', onHealth);
+    poller.on('alert', onAlert);
     const ping = setInterval(() => reply.raw.write(': ping\n\n'), 25_000);
     req.raw.on('close', () => {
       clearInterval(ping);
       poller.off('cycle', onCycle);
       poller.off('feed', onFeed);
       poller.off('health', onHealth);
+      poller.off('alert', onAlert);
     });
   });
 }
