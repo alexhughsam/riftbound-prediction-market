@@ -12,10 +12,14 @@ import time
 import requests
 
 BASE = "https://tcgcsv.com/tcgplayer"
-CATEGORY_NAME = "Riftbound"
+# "Riftbound League of Legends Trading Card Game", verified July 2026;
+# auto-discovery below is the source of truth if this drifts.
+FALLBACK_CATEGORY_ID = 89
 
 _session = requests.Session()
-_session.headers["User-Agent"] = "riftbound-prediction-market/1.0"
+_session.headers["User-Agent"] = (
+    "riftbound-prediction-market/1.0 (github.com/alexhughsam/riftbound-prediction-market)"
+)
 
 
 def _get(path: str, retries: int = 4) -> dict:
@@ -23,6 +27,8 @@ def _get(path: str, retries: int = 4) -> dict:
     delay = 2.0
     for attempt in range(retries + 1):
         try:
+            # tcgcsv etiquette: >=100ms between requests
+            time.sleep(0.15)
             resp = _session.get(url, timeout=30)
             resp.raise_for_status()
             payload = resp.json()
@@ -37,13 +43,18 @@ def _get(path: str, retries: int = 4) -> dict:
     raise RuntimeError("unreachable")
 
 
-def get_category_id(name: str = CATEGORY_NAME) -> int:
-    cats = _get("categories")["results"]
-    for cat in cats:
-        if cat["name"].strip().lower() == name.strip().lower():
+def get_last_updated() -> str:
+    """Daily refresh stamp (~20:00 UTC). Only re-sync when this changes."""
+    resp = _session.get("https://tcgcsv.com/last-updated.txt", timeout=30)
+    resp.raise_for_status()
+    return resp.text.strip()
+
+
+def get_category_id() -> int:
+    for cat in _get("categories")["results"]:
+        if "riftbound" in cat["name"].lower():
             return cat["categoryId"]
-    available = ", ".join(sorted(c["name"] for c in cats))
-    raise KeyError(f"Category {name!r} not found on tcgcsv. Available: {available}")
+    return FALLBACK_CATEGORY_ID
 
 
 def get_groups(category_id: int) -> list[dict]:
