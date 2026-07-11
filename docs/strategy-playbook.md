@@ -2,6 +2,8 @@
 
 *Compiled July 2026 (~9 months after Western launch). Sources linked inline; verify prices before acting — this market moves weekly.*
 
+> **Update, July 2026:** the bull case strengthened materially — confirmed T1 Worlds Champion Collection (Aug 2026, the game's first serialized cards), a near-confirmed K/DA-themed Radiance set (Oct 2026), Korean launch (Sep 2026), and rising tournament attendance. See the catalyst calendar in [getting-started-plan.md](getting-started-plan.md). The supply-policy risk below still governs *sealed and staples*; the catalysts mostly benefit *non-reprintable scarcity*. Both can be true at once.
+
 ## The one-paragraph thesis
 
 Riftbound has **One Piece-tier demand but Lorcana-tier supply policy**. Riot has explicitly committed to reprinting early sets "until the market reaches healthy quantities," prints reprints that are **indistinguishable from first prints** (no 1st-edition stamp — devs blind-tested and couldn't tell them apart), sells direct-to-consumer with quantity caps, and has demonstrated it will **actively destroy speculative price spikes** (see the Flash case study below). Sealed bought above MSRP is fighting Riot's printer. The asymmetric plays are genuinely scarce items and information-edge singles trading — not warehouse-scale sealed hoarding.
@@ -29,6 +31,7 @@ Origins booster displays ($119.99 MSRP): weekly-average peak **~$337 late March 
 
 ## What actually has scarcity (the asymmetric longs)
 
+0. **T1 2025 Worlds Champion Collection (Aug 2026)** — the game's first serialized retail cards (one /2025 card per Signature Edition set; gold-stamped player autographs incl. Faker/Galio; fixed print of 10,125 sets per language at $360, sold by Riot Merch Store drawing). Fixed supply + Faker + Worlds commemoration = the cleanest scarcity thesis Riftbound has offered. Caveat: 30,375 total sets is not tiny, and flipper competition in the drawing will be heavy. ([Press release](https://pressreleases.triplepointpr.com/2026/07/02/riftbound-x-t1-2025-league-of-legends-worlds-champion-collection-launches-this-august/), [riftbound.gg](https://riftbound.gg/riftbound-t1-worlds-bundle/))
 1. **Artist-signature Overnumbered cards** — ~1:360 packs, not reprintable in kind. Origins signatures: Kai'Sa >$1,300, Ahri ~$1,300, Miss Fortune/Jinx $630–810 ([dotesports](https://dotesports.com/tcg/news/most-valuable-riftbound-origins-cards)).
 2. **Event/regional promos** — CN New Year packs, Worlds bundles, regional championship promos. Fixed one-time supply.
 3. **Early PSA 10s of chase signatures** — PSA pop reports for Riftbound exist and populations are still single-digit on many cards ([PSA pop report](https://www.psacard.com/pop/tcg-cards/2026/riftbound-league-legends-sfd-spiritforged/330812), [GemRate](https://www.gemrate.com/)). Grading momentum is early; first-to-grade has an edge.
