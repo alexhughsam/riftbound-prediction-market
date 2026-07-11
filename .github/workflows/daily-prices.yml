@@ -1,0 +1,37 @@
+name: Daily Riftbound price snapshot
+
+on:
+  schedule:
+    # tcgcsv refreshes ~20:00 UTC; snapshot an hour after
+    - cron: "0 21 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Fetch prices
+        run: python -m tracker.fetch_prices
+
+      - name: Movers report
+        run: python -m tracker.report > data/latest-movers.md || true
+
+      - name: Commit snapshot
+        run: |
+          git config user.name "riftbound-price-bot"
+          git config user.email "actions@github.com"
+          git add data/
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "Price snapshot $(date -u +%F)"
+          git push
