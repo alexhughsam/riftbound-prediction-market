@@ -10,6 +10,8 @@ Tools and intelligence for tracking and investing in the Riftbound TCG (Riot's L
 | [docs/market-primer.md](docs/market-primer.md) | Sets, products, MSRPs, chase cards, print policy, grading — the market as of July 2026 |
 | [docs/data-sources.md](docs/data-sources.md) | Every usable price API (free and paid), verified endpoints, dead ends |
 | [docs/strategy-playbook.md](docs/strategy-playbook.md) | Investment thesis, comparable-launch analysis, signals to track, buy/sell mechanics |
+| [docs/getting-started-plan.md](docs/getting-started-plan.md) | **"How do I actually start?"** — position sizing, staged entry, model allocation, catalyst calendar |
+| [docs/community-intel.md](docs/community-intel.md) | Fact-checks of the Riftbound-investing Twitter cluster, incl. the EU/NA arbitrage data |
 
 ## Tooling
 

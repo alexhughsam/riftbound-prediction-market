@@ -29,7 +29,7 @@
 
 5. **Tournament/meta feed → singles positioning.** Regional top-8s move singles within days. riftdecks.com has the structured data (1,991 tournaments logged) but no public API — scraping it or manually reviewing weekly is the gap. Note the China-preview edge dies July 31, 2026 (global simultaneous releases).
 6. **Condition/graded granularity.** tcgcsv gives one market price per product+finish. JustTCG free tier adds NM/LP/MP/HP splits; PSA pop tracking (GemRate or PriceCharting pop pages) tells you when a chase card's graded population is inflecting.
-7. **EU price signal.** CardTrader API (free) gives EUR minimums incl. CN-language variants — useful for the CN-discount arbitrage and for spotting regional divergence.
+7. **EU price signal.** CardTrader API (free) gives EUR minimums incl. CN-language variants — useful for the CN-discount arbitrage and for spotting regional divergence. Community data (June 2026, @Riftvesting) showed EU prices 40–50% below NA on the exact promo class the bull thesis targets (Worlds Bundle $350 NA vs €180 EU) — see `community-intel.md`.
 
 ### Lower value / later
 
