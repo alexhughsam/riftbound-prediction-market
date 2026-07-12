@@ -1,0 +1,13 @@
+services:
+  rbt:
+    build: .
+    container_name: rbt
+    restart: unless-stopped
+    env_file: .env
+    # Bind to localhost only — never expose the terminal on a public
+    # interface (it has demo/kill endpoints and your portfolio, and no auth).
+    # Reach it over your tailnet with:  tailscale serve --bg 8787
+    ports:
+      - "127.0.0.1:8787:8787"
+    volumes:
+      - ./data:/app/data

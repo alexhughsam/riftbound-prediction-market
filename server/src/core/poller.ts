@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { config } from '../config.js';
-import { alertsRepo, feedRepo, snapshotsRepo } from '../db.js';
+import { alertsRepo, cardsRepo, feedRepo, snapshotsRepo } from '../db.js';
 import { EbayAdapter } from '../adapters/ebay.js';
 import { XFeedAdapter } from '../adapters/feed.js';
 import { SampleMarket } from '../adapters/sample.js';
@@ -101,8 +101,10 @@ export class Poller extends EventEmitter {
         : prices.reduce((a, b) => a + b, 0) / prices.length;
       const crossed = alert.direction === 'above' ? price >= alert.threshold : price <= alert.threshold;
       if (crossed) {
-        alertsRepo.trigger(alert.id, Math.round(price * 100) / 100);
-        this.emit('alert', { id: alert.id, cardId: alert.cardId, price });
+        const rounded = Math.round(price * 100) / 100;
+        alertsRepo.trigger(alert.id, rounded);
+        this.emit('alert', { id: alert.id, cardId: alert.cardId, price: rounded });
+        void this.pushNotify(alert.cardId, alert.direction, rounded);
       }
     }
   }
@@ -115,6 +117,28 @@ export class Poller extends EventEmitter {
       if (added) this.emit('feed', { added });
     } catch (err: any) {
       console.error('[poller] feed poll failed:', err?.message);
+    }
+  }
+
+  /** Push a fired alert to the owner's phone via ntfy (if configured).
+   *  Best-effort: a failed push never disturbs the cycle. */
+  private async pushNotify(cardId: number, direction: 'above' | 'below', price: number) {
+    if (!config.ntfyTopic) return;
+    const card = cardsRepo.byId(cardId);
+    const name = card?.name ?? `card #${cardId}`;
+    try {
+      const res = await fetch(`${config.ntfyServer}/${encodeURIComponent(config.ntfyTopic)}`, {
+        method: 'POST',
+        headers: {
+          title: `RBT alert: ${name}`,
+          priority: 'high',
+          tags: direction === 'above' ? 'chart_with_upwards_trend' : 'chart_with_downwards_trend',
+        },
+        body: `${name} crossed ${direction} threshold — best price now $${price}${this.mode === 'sample' ? ' [SAMPLE DATA]' : ''}`,
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch (err: any) {
+      console.error('[poller] ntfy push failed:', err?.message);
     }
   }
 

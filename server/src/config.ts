@@ -34,6 +34,11 @@ export const config = {
   catalogRefreshMs: num('RBT_CATALOG_REFRESH_MS', 6 * 3600_000),
   feedPollMs: num('RBT_FEED_POLL_MS', 5 * 60_000),
 
+  // Push notifications for fired alerts via https://ntfy.sh (free).
+  // Set to any hard-to-guess topic string and subscribe to it in the ntfy app.
+  ntfyTopic: process.env.NTFY_TOPIC ?? '',
+  ntfyServer: process.env.NTFY_SERVER ?? 'https://ntfy.sh',
+
   // Freshness thresholds for provenance downgrades (per-source data age)
   freshMs: num('RBT_FRESH_MS', 30 * 60_000), // <30m => live
   staleMs: num('RBT_STALE_MS', 24 * 3600_000), // >24h => stale
