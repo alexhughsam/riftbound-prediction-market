@@ -1,0 +1,388 @@
+<title>Riftbound Investor Briefing — July 2026</title>
+<style>
+  :root {
+    --navy: #0a1428;
+    --navy-2: #101f3c;
+    --gold: #c89b3c;
+    --gold-deep: #a37c25;
+    --teal: #0ac8b9;
+    --red: #c0413b;
+    --ground: #eef1f6;
+    --panel: #ffffff;
+    --ink: #14213a;
+    --ink-2: #4d5b74;
+    --line: #d4dae4;
+    --gold-on-ground: #8a6a1f;
+    --teal-on-ground: #067d74;
+    --red-on-ground: #ab372f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #0a1428;
+      --panel: #101f3c;
+      --ink: #e8ebf2;
+      --ink-2: #96a2b8;
+      --line: #24344f;
+      --gold-on-ground: #d4ac52;
+      --teal-on-ground: #2fd4c6;
+      --red-on-ground: #e06a63;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0a1428;
+    --panel: #101f3c;
+    --ink: #e8ebf2;
+    --ink-2: #96a2b8;
+    --line: #24344f;
+    --gold-on-ground: #d4ac52;
+    --teal-on-ground: #2fd4c6;
+    --red-on-ground: #e06a63;
+  }
+  :root[data-theme="light"] {
+    --ground: #eef1f6;
+    --panel: #ffffff;
+    --ink: #14213a;
+    --ink-2: #4d5b74;
+    --line: #d4dae4;
+    --gold-on-ground: #8a6a1f;
+    --teal-on-ground: #067d74;
+    --red-on-ground: #ab372f;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    font-size: 1.06rem;
+    line-height: 1.62;
+  }
+  .wrap { max-width: 46rem; margin: 0 auto; padding: 0 1.25rem 5rem; }
+
+  .sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+
+  header.masthead {
+    border-bottom: 3px double var(--gold);
+    padding: 3.5rem 0 1.75rem;
+    margin-bottom: 2.5rem;
+  }
+  .eyebrow {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold-on-ground);
+    margin: 0 0 0.9rem;
+  }
+  h1 {
+    font-size: clamp(1.9rem, 5vw, 2.6rem);
+    line-height: 1.15;
+    font-weight: 600;
+    margin: 0 0 0.75rem;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  .standfirst { font-size: 1.12rem; color: var(--ink-2); margin: 0; max-width: 40rem; }
+
+  h2 {
+    font-size: 1.45rem;
+    font-weight: 600;
+    line-height: 1.25;
+    margin: 3rem 0 1rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--line);
+    text-wrap: balance;
+  }
+  h2 .kicker {
+    display: block;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold-on-ground);
+    margin-bottom: 0.45rem;
+  }
+  h3 { font-size: 1.08rem; font-weight: 700; margin: 1.75rem 0 0.5rem; }
+  p { margin: 0 0 1rem; }
+  a { color: var(--teal-on-ground); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  strong { font-weight: 700; }
+
+  .statstrip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    margin: 2rem 0;
+  }
+  .stat { background: var(--panel); padding: 1rem 1.1rem; }
+  .stat .n {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  .stat .n.up { color: var(--teal-on-ground); }
+  .stat .n.down { color: var(--red-on-ground); }
+  .stat .l { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 0.76rem; color: var(--ink-2); margin-top: 0.35rem; line-height: 1.4; }
+
+  .lede { font-size: 1.14rem; }
+  .lede::first-letter {
+    font-size: 3.1em;
+    float: left;
+    line-height: 0.85;
+    padding: 0.06em 0.12em 0 0;
+    color: var(--gold-on-ground);
+    font-weight: 600;
+  }
+
+  .forces { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin: 1.5rem 0; }
+  @media (max-width: 40rem) { .forces { grid-template-columns: 1fr; } }
+  .force { background: var(--panel); border: 1px solid var(--line); padding: 1.25rem 1.35rem; }
+  .force h3 { margin-top: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+  .force.bull h3 { color: var(--teal-on-ground); }
+  .force.bear h3 { color: var(--red-on-ground); }
+  .force ul { margin: 0; padding-left: 1.1rem; }
+  .force li { margin-bottom: 0.55rem; font-size: 0.98rem; }
+  .force li:last-child { margin-bottom: 0; }
+
+  .tablebox { overflow-x: auto; margin: 1.25rem 0; border: 1px solid var(--line); background: var(--panel); }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 34rem;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+  }
+  th {
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    padding: 0.7rem 0.9rem;
+    border-bottom: 2px solid var(--gold);
+    white-space: nowrap;
+  }
+  td { padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td.num { white-space: nowrap; }
+
+  .timeline { list-style: none; margin: 1.5rem 0; padding: 0; }
+  .timeline li {
+    position: relative;
+    padding: 0 0 1.4rem 1.65rem;
+    border-left: 2px solid var(--line);
+    margin-left: 0.4rem;
+  }
+  .timeline li:last-child { padding-bottom: 0.25rem; }
+  .timeline li::before {
+    content: "";
+    position: absolute;
+    left: -0.42rem;
+    top: 0.42rem;
+    width: 0.68rem;
+    height: 0.68rem;
+    background: var(--ground);
+    border: 2px solid var(--gold);
+    transform: rotate(45deg);
+  }
+  .timeline li.hot::before { background: var(--gold); }
+  .timeline .when {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold-on-ground);
+    display: block;
+    margin-bottom: 0.15rem;
+  }
+  .timeline .what { font-weight: 700; }
+  .timeline p { margin: 0.25rem 0 0; font-size: 0.97rem; color: var(--ink-2); }
+
+  .alloc { list-style: none; margin: 1.5rem 0; padding: 0; display: grid; gap: 0.6rem; }
+  .alloc li { background: var(--panel); border: 1px solid var(--line); padding: 0.85rem 1rem 0.95rem; }
+  .alloc .bar { height: 0.45rem; background: var(--line); margin: 0.55rem 0 0.5rem; }
+  .alloc .fill { height: 100%; background: linear-gradient(90deg, var(--gold-deep), var(--gold)); }
+  .alloc .head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .alloc .name { font-weight: 700; font-size: 0.95rem; }
+  .alloc .pct { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--gold-on-ground); }
+  .alloc .why { font-size: 0.92rem; color: var(--ink-2); line-height: 1.5; }
+
+  .verdict { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; padding: 0.15rem 0.5rem; white-space: nowrap; }
+  .v-yes { color: var(--teal-on-ground); border: 1px solid currentColor; }
+  .v-no { color: var(--red-on-ground); border: 1px solid currentColor; }
+  .v-part { color: var(--gold-on-ground); border: 1px solid currentColor; }
+
+  .pull {
+    border-left: 3px solid var(--gold);
+    padding: 0.25rem 0 0.25rem 1.25rem;
+    margin: 2rem 0;
+    font-size: 1.22rem;
+    line-height: 1.5;
+    font-style: italic;
+    color: var(--ink);
+  }
+  .pull .attr { display: block; font-style: normal; font-size: 0.8rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--ink-2); margin-top: 0.5rem; letter-spacing: 0.06em; text-transform: uppercase; }
+
+  .donts { counter-reset: dont; list-style: none; padding: 0; margin: 1.25rem 0; }
+  .donts li { position: relative; padding: 0 0 0 2.4rem; margin-bottom: 0.9rem; }
+  .donts li::before {
+    counter-increment: dont;
+    content: counter(dont);
+    position: absolute;
+    left: 0; top: 0.1rem;
+    width: 1.5rem; height: 1.5rem;
+    border: 1.5px solid var(--red-on-ground);
+    color: var(--red-on-ground);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.8rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  footer {
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 3px double var(--gold);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.85rem;
+    color: var(--ink-2);
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <p class="eyebrow">Investor Briefing · Riftbound TCG · July 11, 2026</p>
+    <h1>Nine months in: where the money actually is in Riot's card game</h1>
+    <p class="standfirst">Everything from the research and the tooling build, in one read: the state of the market, the verified catalysts, what the Twitter cluster gets right and wrong, and a concrete plan for a first position.</p>
+  </header>
+
+  <p class="lede">Riftbound is the strongest new-TCG launch since One&nbsp;Piece and Lorcana — a top-five seller on TCGplayer for two straight quarters, sell-outs at every set launch, and tournament attendance that keeps setting records. It is also published by a company that reprints aggressively, sells direct with per-account limits, and has already demonstrated it will print a spiking card into the ground. Both facts are true at once, and together they answer the question every new investor asks: <em>what should I actually buy?</em></p>
+
+  <div class="statstrip" role="group" aria-label="Key market figures">
+    <div class="stat"><div class="n">#5</div><div class="l">TCGplayer best-seller rank, Q4 2025 and Q1 2026 — ahead of Lorcana</div></div>
+    <div class="stat"><div class="n down">−45%</div><div class="l">Origins booster boxes in 9 weeks ($337 → $183) after reprints landed</div></div>
+    <div class="stat"><div class="n up">+61%</div><div class="l">Kai'Sa Signature, early 2026 → July (~$1,465 → ~$2,356)</div></div>
+    <div class="stat"><div class="n">1,954</div><div class="l">Players at the Hartford Regional Qualifier in June — a new record</div></div>
+    <div class="stat"><div class="n">$360</div><div class="l">T1 Signature Edition, August drawing — the game's first serialized cards</div></div>
+    <div class="stat"><div class="n">~13%</div><div class="l">All-in exit fees on TCGplayer or eBay — every position must clear this</div></div>
+  </div>
+
+  <h2><span class="kicker">The market</span>Two forces, one conclusion</h2>
+  <p>Every price move in this game since launch traces back to a tug-of-war between real, growing demand and a publisher that refuses to let scarcity form in anything it can reprint.</p>
+
+  <div class="forces">
+    <div class="force bull">
+      <h3>Demand is real and growing</h3>
+      <ul>
+        <li><strong>T1 Worlds Collection confirmed</strong> — revealed at MSI Seoul: gold-stamped player autographs including Faker, one serialized /2025 card per set, fixed at 10,125 sets per language. August drawing, $360.</li>
+        <li><strong>Radiance (Oct 23) is the de facto K/DA set</strong> — music-themed, Seraphine/Evelynn/Ekko, with Akali landing in Vendetta. K/DA's comeback is confirmed for Season 3.</li>
+        <li><strong>Korean market opens September</strong> — a whole new demand pool for Origins chase cards.</li>
+        <li><strong>First Worlds confirmed for 2027</strong>, with regionals in Barcelona, LA, and Singapore this fall feeding into it.</li>
+        <li>Chase signatures appreciated 20–70% through 2026 while populations of graded copies remain tiny.</li>
+      </ul>
+    </div>
+    <div class="force bear">
+      <h3>Riot suppresses reprintable scarcity</h3>
+      <ul>
+        <li><strong>Stated policy:</strong> reprint early sets "until the market reaches healthy quantities." Origins boxes fell 45% in nine weeks when the wave hit.</li>
+        <li><strong>No first-print premium can form</strong> — reprints are deliberately indistinguishable; Riot blind-tested them.</li>
+        <li><strong>The Flash precedent:</strong> when a banned-list shakeup spiked a $72 staple, Riot mailed free copies to every game store. Price halved within weeks.</li>
+        <li><strong>Direct sales with lottery drawings</strong> and per-account caps cut flippers out of every new release.</li>
+        <li>The Lorcana analog looms: first-set chase cards there round-tripped 40–70% once supply and graded populations caught up.</li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="pull">Riftbound has One Piece–level demand and Lorcana-level supply policy. Buy what Riot cannot reprint; pay MSRP or nothing for what it can.<span class="attr">The working thesis</span></p>
+
+  <h2><span class="kicker">Fact check</span>What the Twitter cluster gets right — and wrong</h2>
+  <p>The accounts worth following split cleanly by function: <strong>@Riftvesting</strong> is the data feed (its numbers cross-check), <strong>@RiftboundGG</strong> is an idea feed from a perma-bull whose calls have landed but who never posts a miss, and <strong>@smertcollector</strong> is a window into the graded top end. The five specific tweets from this week were too fresh to be indexed anywhere, but the accounts' recent claims could be verified:</p>
+
+  <div class="tablebox"><table>
+    <thead><tr><th>Claim</th><th>Verdict</th><th>The evidence</th></tr></thead>
+    <tbody>
+      <tr><td>T1 collection: $360, serialized /2025, August drawing</td><td><span class="verdict v-yes">Verified</span></td><td>Official reveal at MSI Seoul, ~July 3</td></tr>
+      <tr><td>K/DA returning, with a set built around it</td><td><span class="verdict v-yes">Verified</span></td><td>K/DA S3 comeback announced; Radiance is music-themed with 4/5 members</td></tr>
+      <tr><td>Nexus Night packs appreciating fast</td><td><span class="verdict v-yes">Verified</span></td><td class="num">$18 → $40+ per pack in under a month</td></tr>
+      <tr><td>GG EZ Teemo promo at $500–700+</td><td><span class="verdict v-yes">Verified</span></td><td class="num">~$553 market; asks to $1,300</td></tr>
+      <tr><td>LNY Teemo pack sold for ~$2,000</td><td><span class="verdict v-part">Unverified</span></td><td>A $2,200 listing exists; no confirmed sale found</td></tr>
+      <tr><td>High-end "doubled or tripled" in 3–4 months</td><td><span class="verdict v-no">Overstated</span></td><td>Verified moves on named cards: +18% to +70%. The 2–3x was launch-to-spring</td></tr>
+      <tr><td>"Supply is non-existent → parabolic"</td><td><span class="verdict v-part">Partial</span></td><td>True only for event promos and serialized items — the cluster never mentions reprint risk</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>The most actionable thing recovered from the whole cluster is Riftvesting's June arbitrage data: <strong>the same collectibles trade 40–50% cheaper in Europe</strong> — Worlds Bundle at $350 in NA versus €180 in the EU, Nexus Night packs $18 versus €8. If you can buy through Cardmarket, CardTrader, or European eBay, that discount applies to exactly the promo class the bull thesis targets.</p>
+
+  <h2><span class="kicker">Calendar</span>Eight months of catalysts</h2>
+  <ul class="timeline">
+    <li class="hot"><span class="when">July 31</span><span class="what">Vendetta releases</span><p>First simultaneous global launch — the China preview edge disappears permanently. Akali completes 4/5 of K/DA. Buy at MSRP only; week-one singles pricing is inefficient.</p></li>
+    <li class="hot"><span class="when">August</span><span class="what">T1 Worlds Collection drawing</span><p>The highest-conviction single action available: enter the Riot Store drawing at $360. If you lose, wait — limited products historically retrace 20–40% after release hype before any long climb.</p></li>
+    <li><span class="when">September</span><span class="what">Korean-language Origins launches</span><p>New collector demand pool for Origins chase cards, which are already the market's blue chips.</p></li>
+    <li><span class="when">Sep 21–27</span><span class="what">Barcelona &amp; Los Angeles Regional Qualifiers</span><p>Position meta singles beforehand, sell into results. Singapore follows Oct 4–6.</p></li>
+    <li class="hot"><span class="when">October 23</span><span class="what">Radiance — the K/DA set</span><p>The thesis event of the fall. Pull rates unknown until release; don't pre-pay the rumor premium.</p></li>
+    <li><span class="when">Dec 11–13</span><span class="what">Convergence Fest, Las Vegas</span><p>NA Regional Championship plus TFT, with an attendee-exclusive promo card — fixed supply by definition. Attendance is the player-base health read.</p></li>
+    <li><span class="when">2027</span><span class="what">First Riftbound Worlds</span><p>The milestone the entire bull case builds toward. Date and location still unannounced.</p></li>
+  </ul>
+
+  <h2><span class="kicker">The plan</span>How to actually start</h2>
+  <p>This is a high-risk, illiquid asset class with a ~13% exit toll. The sizing rules matter more than the picks: use only money you can lose entirely, cap the whole position around <strong>5% of what you invest overall</strong>, and enter in stages — roughly a third now, a third into the August–October catalyst windows, and a third held for the dips that reprint announcements reliably create. The Origins arc showed what buying the top costs: anyone who bought boxes in March was down 45% by May.</p>
+
+  <h3>A model first allocation</h3>
+  <ul class="alloc">
+    <li>
+      <div class="head"><span class="name">Non-reprintable scarcity</span><span class="pct">40%</span></div>
+      <div class="bar"><div class="fill" style="width:40%"></div></div>
+      <div class="why">T1 Signature Edition via the August drawing, event promos, Worlds bundles. The only structurally supply-capped assets in the game — and where the community's verified wins keep coming from.</div>
+    </li>
+    <li>
+      <div class="head"><span class="name">Sealed at MSRP only</span><span class="pct">25%</span></div>
+      <div class="bar"><div class="fill" style="width:25%"></div></div>
+      <div class="why">Vendetta and Radiance displays at $119.99 through Riot drawings, LGS preorders, retail drops. Never above MSRP — the downside stays bounded and you never fight the printer.</div>
+    </li>
+    <li>
+      <div class="head"><span class="name">Graded chase singles</span><span class="pct">20%</span></div>
+      <div class="bar"><div class="fill" style="width:20%"></div></div>
+      <div class="why">PSA 10 signatures while populations sit in the single and double digits. Grading only pencils out above ~$150 raw value against an $80 grading fee.</div>
+    </li>
+    <li>
+      <div class="head"><span class="name">Meta singles — trading, not holding</span><span class="pct">10%</span></div>
+      <div class="bar"><div class="fill" style="width:10%"></div></div>
+      <div class="why">Buy staples ahead of the fall regionals, sell into result spikes. Take profits fast — remember what Riot did to Flash.</div>
+    </li>
+    <li>
+      <div class="head"><span class="name">Cash reserve</span><span class="pct">5%</span></div>
+      <div class="bar"><div class="fill" style="width:5%"></div></div>
+      <div class="why">Reprint-announcement dips are a recurring, purchasable event in this game.</div>
+    </li>
+  </ul>
+
+  <h3>The four mistakes that cost the most</h3>
+  <ol class="donts">
+    <li><strong>Buying street-priced sealed of old sets.</strong> Origins at $183 is still under active reprint pressure, and Riot has said more is coming.</li>
+    <li><strong>Holding playable staples long.</strong> Flash went $72 → ~$40 after Riot mailed free copies to every store. Any spiking staple is a promo-print away from a haircut.</li>
+    <li><strong>Paying secondary prices for the T1 set.</strong> Enter the drawing at $360. Losing the lottery is not a reason to pay a flipper $700 in September.</li>
+    <li><strong>Ignoring the exit math.</strong> A card must rise ~15% just to break even after fees. This quietly kills small-position trading of cheap cards.</li>
+  </ol>
+
+  <h3>Measure it, don't vibe it</h3>
+  <p>The repo is the measurement system: log every purchase in the portfolio file the day you buy, let the daily price snapshot accrue history automatically, and check the portfolio valuation <em>weekly, not daily</em> — illiquid assets punish twitchy watching. Set two review checkpoints — after Radiance in November, after Convergence Fest in January — and compare profit per bucket, after fees. Scale up only what's working; write the exit thesis for every position down when you open it, so future-you remembers why it exists.</p>
+
+  <h2><span class="kicker">Toolkit</span>What's built and what's still missing</h2>
+  <p>The repository now covers the daily loop: a price snapshotter pulling every Riftbound single and sealed product from the free tcgcsv mirror of TCGplayer (category 89, verified), a movers report with watchlist buy/sell alerts, portfolio profit tracking, per-product price history, and a GitHub Action that snapshots daily once merged to main.</p>
+  <p>The ranked gaps that remain: <strong>historical backfill</strong> (tcgcsv publishes archived daily dumps back to launch), a <strong>PriceCharting subscription</strong> (~$6/month — the only realistic source of eBay sold prices and graded population data for an individual), an <strong>announcement-feed alerter</strong> on Riot's news page (bans and reprints move prices within days), and <strong>restock alerts</strong> for MSRP buying. The EU arbitrage can be automated through CardTrader's free API.</p>
+
+  <footer>
+    <p>Compiled July 11, 2026 from verified primary sources — Riot announcements, ICv2, TCGplayer seller reports, PriceCharting, and fact-checked community data. Prices are snapshots and move weekly; re-verify before trading. This is a research framework, not financial advice.</p>
+  </footer>
+</div>
