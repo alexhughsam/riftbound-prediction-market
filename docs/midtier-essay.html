@@ -1,0 +1,275 @@
+<title>The Mid-Tier Collector's Playbook — Pokémon to Riftbound</title>
+<style>
+  :root {
+    --navy: #0a1428;
+    --gold: #c89b3c;
+    --gold-deep: #a37c25;
+    --ground: #eef1f6;
+    --panel: #ffffff;
+    --ink: #14213a;
+    --ink-2: #4d5b74;
+    --line: #d4dae4;
+    --gold-on-ground: #8a6a1f;
+    --teal-on-ground: #067d74;
+    --red-on-ground: #ab372f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #0a1428;
+      --panel: #101f3c;
+      --ink: #e8ebf2;
+      --ink-2: #96a2b8;
+      --line: #24344f;
+      --gold-on-ground: #d4ac52;
+      --teal-on-ground: #2fd4c6;
+      --red-on-ground: #e06a63;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0a1428;
+    --panel: #101f3c;
+    --ink: #e8ebf2;
+    --ink-2: #96a2b8;
+    --line: #24344f;
+    --gold-on-ground: #d4ac52;
+    --teal-on-ground: #2fd4c6;
+    --red-on-ground: #e06a63;
+  }
+  :root[data-theme="light"] {
+    --ground: #eef1f6;
+    --panel: #ffffff;
+    --ink: #14213a;
+    --ink-2: #4d5b74;
+    --line: #d4dae4;
+    --gold-on-ground: #8a6a1f;
+    --teal-on-ground: #067d74;
+    --red-on-ground: #ab372f;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    font-size: 1.07rem;
+    line-height: 1.66;
+  }
+  .wrap { max-width: 44rem; margin: 0 auto; padding: 0 1.25rem 5rem; }
+
+  header.masthead { border-bottom: 3px double var(--gold); padding: 3.5rem 0 1.75rem; margin-bottom: 2.5rem; }
+  .eyebrow {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--gold-on-ground); margin: 0 0 0.9rem;
+  }
+  h1 {
+    font-size: clamp(1.9rem, 5vw, 2.55rem); line-height: 1.14; font-weight: 600;
+    margin: 0 0 0.75rem; text-wrap: balance; letter-spacing: -0.01em;
+  }
+  .standfirst { font-size: 1.13rem; color: var(--ink-2); margin: 0; }
+
+  h2 {
+    font-size: 1.42rem; font-weight: 600; line-height: 1.25;
+    margin: 3rem 0 1rem; padding-top: 2rem; border-top: 1px solid var(--line); text-wrap: balance;
+  }
+  h2 .kicker {
+    display: block;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--gold-on-ground); margin-bottom: 0.45rem;
+  }
+  h3 { font-size: 1.08rem; font-weight: 700; margin: 1.9rem 0 0.5rem; }
+  p { margin: 0 0 1.05rem; }
+  a { color: var(--teal-on-ground); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  .lede { font-size: 1.14rem; }
+  .lede::first-letter {
+    font-size: 3.1em; float: left; line-height: 0.85; padding: 0.06em 0.12em 0 0;
+    color: var(--gold-on-ground); font-weight: 600;
+  }
+
+  .pull {
+    border-left: 3px solid var(--gold); padding: 0.25rem 0 0.25rem 1.25rem; margin: 2rem 0;
+    font-size: 1.2rem; line-height: 1.5; font-style: italic;
+  }
+  .pull .attr {
+    display: block; font-style: normal; font-size: 0.78rem;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--ink-2); margin-top: 0.5rem; letter-spacing: 0.06em; text-transform: uppercase;
+  }
+
+  .tablebox { overflow-x: auto; margin: 1.25rem 0; border: 1px solid var(--line); background: var(--panel); }
+  table {
+    border-collapse: collapse; width: 100%; min-width: 32rem;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.9rem; font-variant-numeric: tabular-nums;
+  }
+  th {
+    text-align: left; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-2); padding: 0.7rem 0.9rem; border-bottom: 2px solid var(--gold); white-space: nowrap;
+  }
+  td { padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td.num { white-space: nowrap; }
+  .cap {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.8rem; color: var(--ink-2); margin: -0.6rem 0 1.5rem; line-height: 1.5;
+  }
+
+  .rulebox { background: var(--panel); border: 1px solid var(--line); border-top: 3px solid var(--gold); padding: 1.35rem 1.5rem; margin: 1.75rem 0; }
+  .rulebox h3 { margin-top: 0; }
+  .rulebox ol, .rulebox ul { margin: 0; padding-left: 1.2rem; }
+  .rulebox li { margin-bottom: 0.55rem; }
+  .rulebox li:last-child { margin-bottom: 0; }
+
+  .good { color: var(--teal-on-ground); font-weight: 700; }
+  .bad { color: var(--red-on-ground); font-weight: 700; }
+
+  footer {
+    margin-top: 4rem; padding-top: 1.5rem; border-top: 3px double var(--gold);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.85rem; color: var(--ink-2);
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <p class="eyebrow">Companion Essay · Riftbound Research · July 2026</p>
+    <h1>The mid-tier collector's playbook: what thirty years of Pokémon teaches a Riftbound buyer</h1>
+    <p class="standfirst">You can't afford a first-edition Charizard, and you don't need to. The most repeatable returns in card collecting have come from a specific band below the grails — here's how that band works, who buys it, and where it lives in Riftbound.</p>
+  </header>
+
+  <p class="lede">Every card game's market looks, from the outside, like a lottery about its most expensive card. Pokémon has the $16 million Pikachu Illustrator; Riftbound already has a $9,000 tournament-prize Miss Fortune. But almost nobody who makes money in cards makes it there. The repeatable trade — the one that has worked over and over for twenty-five years — happens in the $50 to $500 band, where a card bought for $150 becomes $500 over three to five years because the right kind of person wants it and can't stop wanting it. Understanding <em>who that person is</em> matters more than any price chart, and Pokémon's history is the best textbook ever written on the subject.</p>
+
+  <h2><span class="kicker">Part one</span>A short history of how cardboard became an asset</h2>
+  <p>Pokémon cards launched in the US in January 1999 and were a mania within months — then the mania died. By 2002–03, the game was so cold that Wizards of the Coast lost the license and its final sets (Expedition, Aquapolis, Skyridge) sold miserably. Nobody wanted them, so nobody printed many, so nobody preserved them. Those trough-era sets are now among the most valuable in the hobby — not because they were designed to be rare, but because <strong>demand disappeared before supply did</strong>.</p>
+  <p>Then came the long quiet: a decade of decent sets bought only by players and kids. The modern market was born in 2016, when the Evolutions set (a nostalgic Base Set remake) and Pokémon GO's summer put the franchise back in front of adults who'd loved it at age ten and now had salaries. That's the single most important structural fact in this entire essay: <strong>the buyers who move card markets arrive on a demographic schedule</strong>. Millennials hit their thirties, went looking for their childhood, and found it in a binder.</p>
+  <p>The pandemic turned that current into a flood — Logan Paul's box breaks, PSA drowning in half a million grading submissions a week, everything tripling — followed by a 30–50% correction in 2022–24 that punished everyone who bought the hype. And then, remarkably, the market made new all-time highs: the Card Ladder Pokémon index rose over 100% into 2026, even as The Pokémon Company printed <em>ten billion cards in a single year</em> and reprinted everything it could. Which brings us to the paradox that defines the modern era, and that matters enormously for Riftbound:</p>
+  <p class="pull">Reprints kill sealed-box premiums and do almost nothing to the #1 chase card of a beloved set. Print runs inflate everything in the set — except the ratio between the top card and the demand for it.<span class="attr">The modern-era paradox</span></p>
+
+  <h2><span class="kicker">Part two</span>The character tax: the engine under every mid-tier winner</h2>
+  <p>Here is the cleanest, most quantifiable fact in Pokémon economics. Take one set — Evolving Skies, 2021 — and look at its alternate-art VMAX cards. Same set, same rarity, effectively the same pull rate. The only variable is <em>which character is on the card</em>:</p>
+
+  <div class="tablebox"><table>
+    <thead><tr><th>Card (identical rarity slot)</th><th>Price, early 2026</th><th>vs. the floor</th></tr></thead>
+    <tbody>
+      <tr><td>Umbreon VMAX alt art ("Moonbreon")</td><td class="num">$1,700+</td><td class="num">6.6×</td></tr>
+      <tr><td>Rayquaza VMAX alt art</td><td class="num">~$1,000–1,100</td><td class="num">~4×</td></tr>
+      <tr><td>Sylveon VMAX alt art</td><td class="num">$334</td><td class="num">1.3×</td></tr>
+      <tr><td>Leafeon VMAX alt art</td><td class="num">$326</td><td class="num">1.3×</td></tr>
+      <tr><td>Glaceon VMAX alt art</td><td class="num">$256</td><td class="num">1× (floor)</td></tr>
+    </tbody>
+  </table></div>
+  <p class="cap">Source: Bleeding Cool Evolving Skies value tracking, Feb–Mar 2026. The same pattern holds in the 151 set (Charizard 2.4–2.8× Blastoise/Venusaur) and Prismatic Evolutions (Umbreon ~3× the #2 card).</p>
+
+  <p>Collectors call it the character tax, and it has two properties that make it the foundation of the whole playbook. First, it's <strong>stable</strong> — the hierarchy (Charizard, Umbreon, Pikachu, the Eeveelutions, Gengar, Rayquaza, plus "waifu" trainer cards like Lillie) barely changes year to year, because it's built on parasocial attachment, not fashion. Second, it <strong>widens over time</strong>: the floor characters decay while the marquee appreciates, so buying the popular character isn't just safer, it compounds faster.</p>
+  <p>Why? Because of who the durable buyer actually is. The Pokémon community's own taxonomy of collectors — character collectors, art collectors, set completionists, grade-registry chasers, nostalgia buyers, competitive players, flippers — sorts cleanly by how long their demand lasts. Competitive players stop buying a card the day it rotates out of tournaments. Flippers are just trading against each other (one 2026 analysis estimated over 80% of sales volume is speculators passing cards among themselves). But the <strong>character collector</strong> — the person who owns every Umbreon ever printed and will buy every Umbreon printed in the future, at any rarity, at almost any price — never leaves. Their demand is price-inelastic, rotation-proof, and fashion-proof. Moonbreon is a $1,700 card because tens of thousands of people have decided Umbreon is <em>their</em> Pokémon. That is the buyer you are investing alongside. Everything else in the playbook falls out of this one insight.</p>
+
+  <h2><span class="kicker">Part three</span>The winner formula — and the graveyard</h2>
+  <p>Run the character tax through Pokémon's last decade of mid-tier trajectories and a formula falls out. The canonical wins all share the same anatomy:</p>
+
+  <div class="tablebox"><table>
+    <thead><tr><th>Card</th><th>Entry price</th><th>2025–26 value</th><th>Time</th></tr></thead>
+    <tbody>
+      <tr><td>Umbreon VMAX alt (Evolving Skies, 2021)</td><td class="num">$250–400 at release</td><td class="num">$400–800 raw · $1,200–1,800 PSA 10</td><td class="num">5 yrs</td></tr>
+      <tr><td>Giratina V alt (Lost Origin, 2022)</td><td class="num">$234 (Nov 2022)</td><td class="num">~$850 raw</td><td class="num">3 yrs</td></tr>
+      <tr><td>Lugia V alt (Silver Tempest, 2022)</td><td class="num">~$150–250 at release</td><td class="num">~$500–540 raw</td><td class="num">3 yrs</td></tr>
+      <tr><td>151 Charizard ex SIR (2023)</td><td class="num">~$185 (Jun 2025)</td><td class="num">$416+ (Mar 2026)</td><td class="num">9 mo</td></tr>
+      <tr><td>Hidden Fates Shiny Charizard (2019)</td><td class="num">~$150–250 at release</td><td class="num">~$676 raw · ~$1,700 PSA 10</td><td class="num">6 yrs</td></tr>
+    </tbody>
+  </table></div>
+  <p class="cap">All of these survived a 40–50% drawdown in 2022–24 and came out ahead. The 151 Charizard's spike was triggered by the set going out of print at rotation in April 2026 — end-of-print is a recurring catalyst.</p>
+
+  <p>The shared anatomy: <strong>top-two character × the #1 or #2 chase slot of a well-loved set × a genuinely low pull rate (roughly 1-in-500 packs or worse) × art that tells a story × an eventual end of printing</strong>. Notice what's <em>not</em> in the formula: how good the card is in tournaments, how big the set's print run was, and what rarity tier the card nominally occupies. Evolving Skies was printed in staggering quantities and Moonbreon ran anyway, because more packs means more of everything else too — the ratio of the chase card to the people who want it is what matters.</p>
+
+  <h3>The graveyard is just as instructive</h3>
+  <p>Every mid-tier loser in Pokémon history has one of three defects:</p>
+  <div class="rulebox">
+    <ol>
+      <li><span class="bad">Demand tied to playability.</span> Zacian V Full Art was a $40–80 tournament staple in 2021; it retails for $6.99 today. Deck demand has an expiry date printed on it — the rotation calendar.</li>
+      <li><span class="bad">Rarity without character.</span> Rainbow rares were the <em>highest</em> rarity tier of their era; the non-marquee ones fell from $50–150 to $10–40 because "shiniest" isn't a collector identity. Nobody collects every rainbow rare. People collect every Umbreon.</li>
+      <li><span class="bad">A scarcity story contradicted by the print run.</span> Champion's Path Charizard VMAX — guaranteed-Charizard marketing, enormous print — round-tripped from a ~$400–500 hype peak to ~$220 over five years <em>while the overall Pokémon index doubled</em>. The Charizard Ultra Premium Collection promos did the same. Even the strongest character can't beat a fat print run of a guaranteed card.</li>
+    </ol>
+  </div>
+  <p>And one more, subtler graveyard: <strong>high-population graded modern cards bought at hype</strong>. Pandemic-era PSA 10s of easy-to-grade modern cards lost 30–50% and never recovered, because the population keeps growing forever. The Van Gogh Pikachu told the whole story in miniature: PSA 10s spiked past $1,000 at release (October 2023), collapsed to ~$200 within six months as thousands of copies got graded, then recovered to ~$750 for the people who bought the <em>panic</em> instead of the <em>hype</em>. Grading only adds value when the card is genuinely hard to grade well or the raw supply is genuinely fixed.</p>
+
+  <h2><span class="kicker">Part four</span>Timing: the lifecycle every modern chase card follows</h2>
+  <p>Modern Pokémon chase cards trace the same arc so reliably that the community has names for the phases:</p>
+  <div class="rulebox">
+    <ol>
+      <li><strong>Release spike</strong> (weeks 0–8): hype pricing, worst possible entry. The people who bought Van Gogh PSA 10s at $1,000 bought here.</li>
+      <li><strong>Saturation trough</strong> (roughly 6–24 months in): reprint waves land, boxes are everywhere, the chase single quietly bottoms. Moonbreon at $200–250 in 2022; Giratina at $234; 151 Charizard at $55–80 through mid-2025. <span class="good">This is the accumulation window.</span></li>
+      <li><strong>Out-of-print inflection</strong> (~2–3 years in): printing stops, supply is finally finite, and the chase cards begin the long climb. The big moves historically arrive 3–7 years out.</li>
+    </ol>
+  </div>
+  <p>The corollary heuristic: <strong>sell playables before rotation; buy collector chases in the trough and hold through out-of-print.</strong> The trough feels terrible to buy — the market is bored, the set is "dead," content creators have moved on. That boredom is the discount.</p>
+
+  <h2><span class="kicker">Part five</span>Translating all of it to Riftbound</h2>
+  <p>Riftbound is nine months old, which means the entire game is somewhere between phase one and phase two of the lifecycle. The good news: every structural element of the Pokémon playbook already exists in Riftbound, and most of them are already measurable.</p>
+
+  <h3>The character tax is already priced in — and already quantified</h3>
+  <p>League of Legends has its own parasocial hierarchy, and Riot publishes its revealed preferences: the champions with the most skins (Miss Fortune and Lux at 22; Ahri, Akali, and Ezreal at 21) are the ones that sell. Arcane measurably lifted Jinx, Vi, and Caitlyn. And Riftbound prices already obey the hierarchy. Origins' non-signature Overnumbered Legends all share the same pull rate — about one per three booster boxes — so, exactly like the Evolving Skies table, character is the only variable:</p>
+
+  <div class="tablebox"><table>
+    <thead><tr><th>Origins Overnumbered (same pull rate)</th><th>Price, mid-2026</th><th>vs. the floor</th></tr></thead>
+    <tbody>
+      <tr><td>Ahri – Nine-Tailed Fox #303</td><td class="num">~$170–190</td><td class="num">~4–7×</td></tr>
+      <tr><td>Miss Fortune – Bounty Hunter</td><td class="num">~$173</td><td class="num">~4–6×</td></tr>
+      <tr><td>Jinx – Loose Cannon #301</td><td class="num">~$90–107</td><td class="num">~2–4×</td></tr>
+      <tr><td>Lee Sin – Blind Monk #304</td><td class="num">~$60 (+51% in 30 days)</td><td class="num">~2×</td></tr>
+      <tr><td>Volibear – Relentless Storm #300</td><td class="num">~$26–46</td><td class="num">1× (floor)</td></tr>
+    </tbody>
+  </table></div>
+  <p class="cap">The mapping writes itself: Ahri is Riftbound's Umbreon (the parasocial queen — her Spiritforged signature is already the most expensive card in the game), Jinx is the Arcane-fueled riser, Teemo and the poros are the mascot lane (Pikachu's role), and Volibear is the Glaceon floor you never buy.</p>
+
+  <h3>One thing Pokémon never gave you: a written scarcity promise</h3>
+  <p>This is the single most important sentence in Riftbound's official collectability policy: <strong>Riot has publicly committed to never reprinting an Overnumbered card with the same art and frame.</strong> Pokémon collectors spend careers handicapping reprint risk; Riftbound's Overnumbered class has it ruled out in writing. Combine that with what we know from the first briefing — Riot aggressively reprints <em>everything else</em> and promo-bombs any spiking playable — and the market splits into exactly the two halves the Pokémon graveyard predicts: reprintable classes (boosters, showcases, epics, staples) where price ceilings are policy, and a contractually fixed class (Overnumbereds, signatures, window-limited event promos) where the Pokémon winner formula can actually run.</p>
+
+  <h3>The Riftbound mid-tier map, priced today</h3>
+  <div class="tablebox"><table>
+    <thead><tr><th>Class</th><th>Examples &amp; prices, July 2026</th><th>Pokémon analogue</th><th>Verdict</th></tr></thead>
+    <tbody>
+      <tr><td>Non-sig Overnumbereds, top champions</td><td>Ahri #303 ~$170–190 · Irelia (SFD) ~$94 · Master Yi (UNL) ~$32</td><td>The alt-art VMAX slot</td><td><span class="good">Core holding</span> — fixed supply in writing, character tax engine</td></tr>
+      <tr><td>The poro cycle (Unleashed, artist FOREDAWN)</td><td>Lonely Poro ~$138–142 · Pouty ~$61 · Daring ~$60 · Mystic ~$48 — a 6-card linked panorama</td><td>Eeveelution / mascot collecting</td><td><span class="good">Core holding</span> — champion-agnostic cuteness; the whole top-5 of the set's non-sigs are poros</td></tr>
+      <tr><td>Window-fixed promos, popular characters</td><td>Panda Teemo #263a ~$197–233 (from a $99.99 bundle, 7 months) · launch Ahri #066 ~$71–120 · Lunar Revel Irelia ~$70</td><td>Fixed-run event promos</td><td><span class="good">Core holding</span> — distribution window closed forever; GG EZ Teemo already ran $18-pack lottery odds to $660+ raw</td></tr>
+      <tr><td>Showcase/alt arts of popular champions</td><td>Mostly $20–80; bounded by reprint risk</td><td>Regular full arts</td><td>Selective — buy only top-2 characters, only in troughs</td></tr>
+      <tr><td>Meta epics &amp; staples</td><td>Pyke +314% to $16.63 on Master Yi meta · Whiteflame Protector etc.</td><td>Zacian V</td><td><span class="bad">Trade only, never hold</span> — rotation + Riot's promo-bombing (Flash: $72 → $40)</td></tr>
+      <tr><td>Organized-play utility promos</td><td>World Atlas $0.19–0.49 · Edge of Night top-8 promo $1.39–2.75</td><td>Non-character rainbow rares</td><td><span class="bad">Avoid</span> — genuinely scarce, and worthless anyway: no character, no collector</td></tr>
+    </tbody>
+  </table></div>
+  <p class="cap">The organized-play promo row is the purest proof that scarcity without character is worth nothing: a top-8 championship promo with a tiny print run trades under $3 because it depicts a utility rune instead of a champion.</p>
+
+  <h3>What a spread portfolio actually looks like</h3>
+  <p>Your instinct — a thousand dollars across five to ten cards instead of one — is the historically correct one for where you are. The Pokémon evidence: the mid-tier appreciates <em>faster</em> than blue chips when you pick the #1–2 chase of a loved set, and it's dramatically more liquid (sub-$500 cards transact continuously; four-figure cards sit for weeks and exit through auction fees). The risk profile is different, though: blue chips forgive, mid-tier picking error is fatal. Diversification across five to ten cards is precisely the insurance against picking error. An illustrative $1,000 deployment using today's prices, strictly as a worked example of the philosophy:</p>
+  <div class="rulebox">
+    <ul>
+      <li><strong>~$180 — Ahri #303 Overnumbered:</strong> the game's Umbreon, in the never-reprinted class.</li>
+      <li><strong>~$200 — Panda Teemo #263a:</strong> mascot + fixed Worlds 2025 window + already the cleanest documented 2× in the game.</li>
+      <li><strong>~$140 — Lonely Poro:</strong> top card of the poro panorama; mascot demand with no champion-meta dependency.</li>
+      <li><strong>~$200 — Jinx #301 + a second-tier poro (~$60 each range):</strong> the Arcane cohort bet — Jinx's OV is a third of Ahri's price with arguably the second-strongest parasocial base, plus completing exposure to the panorama.</li>
+      <li><strong>~$100 — launch Ahri promo #066:</strong> retired distribution, the game's first promo, EU copies ~40% cheaper if you can buy there.</li>
+      <li><strong>~$180 — reserve</strong> for the Vendetta/Radiance saturation troughs — the Rival diptych cycle (Riftbound's next "panorama" experiment) and any K/DA-set Overnumbereds of Ahri/Akali/Evelynn <em>after</em> release hype fades, not during it.</li>
+    </ul>
+  </div>
+  <p>And yes — one or two high-end anchors makes sense at your stage, exactly as you suspected. The Pokémon lesson is just to make the anchor a <em>blue chip of the fixed class</em> (a signature Overnumbered of a top-3 champion, or a low-pop PSA 10 of one) rather than the hottest card of the current set, and to buy it in a trough, not a hype week. Signatures are 1-in-360 packs, never reprintable, and the population reports are still in the double digits — that's the Moonbreon setup, five years early.</p>
+
+  <h2><span class="kicker">Part six</span>On funding this from crypto</h2>
+  <p>Moving <em>some</em> crypto into cards is defensible; moving "a lot" deserves a hard look at three frictions crypto has trained you not to think about:</p>
+  <div class="rulebox">
+    <ol>
+      <li><strong>The tax event is real.</strong> In most jurisdictions (including the US), selling or converting crypto realizes capital gains in that tax year. Price the tax bill into the plan before you sell anything — and note that collectibles themselves are often taxed <em>worse</em> than long-term crypto gains when you eventually exit (in the US, up to 28% on long-term collectible gains).</li>
+      <li><strong>The friction asymmetry is enormous.</strong> Crypto exits cost basis points and settle in minutes. Cards cost ~13% in marketplace fees plus shipping, grading, and weeks of listing time — a card must appreciate ~15% for you to break even, and a mid-tier position takes days-to-weeks to liquidate at fair value. You are trading the most liquid speculative asset on earth for one of the least.</li>
+      <li><strong>It isn't really diversification.</strong> Cards and crypto are both sentiment-driven, risk-on alternatives owned by overlapping demographics — both boomed in 2020–21 and both drew down hard in 2022. The 2022–24 Pokémon correction (-30–50%) tracked the same tightening cycle that cut crypto in half. You'd be diversifying platforms, not risk.</li>
+    </ol>
+  </div>
+  <p>The framework that respects all three: <strong>convert in stages, sized to the plan rather than the portfolio</strong>. Decide the total card budget first (the earlier briefing's discipline: an amount you could lose entirely, capped around 5% of investable assets), fund it from crypto in two or three tranches timed to your buying windows (the August T1 drawing, the post-Radiance trough), and stop there — regardless of how the first tranche performs. The one genuinely good argument for the swap is conviction-specific, not asset-class-specific: you're nine months into a game with a written no-reprint promise on its collector class, a demographic engine (a hundred million League players aging into disposable income), and mid-tier prices that haven't yet had their first out-of-print inflection. If that thesis is right, a measured position captures it. If it's wrong, the cap is what saves you — the same way it would have saved a MetaZoo believer.</p>
+
+  <p class="pull">Buy the character, not the rarity. Buy the trough, not the hype. Buy what can't be reprinted, in the size you can afford to be wrong about.<span class="attr">The whole playbook in one line</span></p>
+
+  <footer>
+    <p>Companion to the July 2026 Riftbound Investor Briefing. Pokémon data: Card Ladder, PSA, Bleeding Cool value-watch series, Sports Card Investor, Pokeval, Elite Fourum, CNBC. Riftbound data: TCGplayer/PriceCharting extracts, riftDecks, official Riot collectability announcements, Yahoo/GameDaily chase-card series. Prices are snapshots and move weekly; several release-window figures are community-reported approximations. Research framework, not financial or tax advice — confirm tax treatment with a professional before converting crypto.</p>
+  </footer>
+</div>
