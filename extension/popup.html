@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Riftbound Match Tracker</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <h1>Riftbound Match Tracker</h1>
+    <div id="stats" class="stats" aria-live="polite"></div>
+  </header>
+
+  <main>
+    <form id="match-form">
+      <fieldset>
+        <legend>Match result</legend>
+        <div class="row radio-row" role="radiogroup" aria-label="Result">
+          <label class="pill">
+            <input type="radio" name="result" value="win" required />
+            <span>Win</span>
+          </label>
+          <label class="pill">
+            <input type="radio" name="result" value="loss" />
+            <span>Loss</span>
+          </label>
+          <label class="pill">
+            <input type="radio" name="result" value="draw" />
+            <span>Draw</span>
+          </label>
+        </div>
+      </fieldset>
+
+      <div class="row">
+        <label for="format">Format</label>
+        <select id="format" name="format" required>
+          <option value="" disabled selected>Select a format…</option>
+          <option>1v1 (Standard)</option>
+          <option>2v2</option>
+          <option>Free-for-All</option>
+          <option>Draft</option>
+          <option>Sealed</option>
+          <option>Casual</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label for="champion">Chosen champion</label>
+        <input id="champion" name="champion" type="text" required
+               placeholder="e.g. Jinx" list="champion-suggestions" autocomplete="off" />
+        <datalist id="champion-suggestions"></datalist>
+      </div>
+
+      <div class="row">
+        <label for="deck">Deck / cards</label>
+        <input id="deck" name="deck" type="text"
+               placeholder="Deck name or key cards" list="deck-suggestions" autocomplete="off" />
+        <datalist id="deck-suggestions"></datalist>
+      </div>
+
+      <div class="row">
+        <label for="battlefield">Battlefield</label>
+        <input id="battlefield" name="battlefield" type="text"
+               placeholder="Battlefield played" list="battlefield-suggestions" autocomplete="off" />
+        <datalist id="battlefield-suggestions"></datalist>
+      </div>
+
+      <div class="row">
+        <label for="opponent">Opponent's champion</label>
+        <input id="opponent" name="opponent" type="text"
+               placeholder="Optional" list="champion-suggestions" autocomplete="off" />
+      </div>
+
+      <div class="row checkbox-row">
+        <label class="pill wide">
+          <input type="checkbox" id="mulligan" name="mulligan" />
+          <span>Mulliganed opening hand</span>
+        </label>
+      </div>
+
+      <div class="row">
+        <label for="notes">Notes</label>
+        <textarea id="notes" name="notes" rows="2" placeholder="Optional notes"></textarea>
+      </div>
+
+      <div class="row actions">
+        <button type="submit" class="primary">Save match</button>
+      </div>
+    </form>
+
+    <section class="history-section">
+      <div class="history-header">
+        <h2>Match history</h2>
+        <div class="history-tools">
+          <button id="export-btn" type="button" title="Download history as JSON">Export</button>
+          <button id="clear-btn" type="button" class="danger" title="Delete all saved matches">Clear</button>
+        </div>
+      </div>
+      <ul id="history"></ul>
+      <p id="empty-state" class="empty" hidden>No matches recorded yet.</p>
+    </section>
+  </main>
+
+  <script src="popup.js"></script>
+</body>
+</html>
